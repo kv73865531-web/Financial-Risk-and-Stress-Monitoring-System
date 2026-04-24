@@ -1,0 +1,2256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FinanceBuddy — Smart Finance Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;--surface3:#222233;
+  --border:rgba(255,255,255,0.07);--accent:#7c5cfc;--accent2:#e05cfc;
+  --green:#2dffb4;--red:#ff4d6d;--yellow:#ffd166;--orange:#ff9a3c;
+  --text:#f0eeff;--muted:#8880aa;--radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 60% 40% at 80% 10%,rgba(124,92,252,.13) 0%,transparent 60%),
+             radial-gradient(ellipse 50% 40% at 10% 80%,rgba(224,92,252,.08) 0%,transparent 60%);
+}
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;
+  justify-content:space-between;padding:16px 32px;background:rgba(10,10,15,.92);
+  backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.5px;cursor:pointer;}
+.logo span{color:var(--accent);}
+.nav-tabs{display:flex;gap:4px;}
+.nav-tab{padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;
+  transition:all .2s;border:1px solid transparent;background:transparent;color:var(--muted);}
+.nav-tab:hover{color:var(--text);background:var(--surface);}
+.nav-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+/* PAGES */
+.page{display:none;padding-top:80px;min-height:100vh;position:relative;z-index:1;}
+.page.active{display:block;}
+/* AUTH */
+.auth-wrap{display:flex;align-items:center;justify-content:center;
+  min-height:calc(100vh - 80px);padding:40px 20px;}
+.auth-card{width:100%;max-width:500px;background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:40px;animation:slideUp .4s ease;position:relative;z-index:2;}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.auth-title{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:6px;}
+.auth-sub{color:var(--muted);font-size:14px;margin-bottom:28px;line-height:1.5;}
+.form-group{margin-bottom:18px;position:relative;z-index:2;}
+label{display:block;font-size:12px;font-weight:500;color:var(--muted);
+  margin-bottom:7px;letter-spacing:.5px;text-transform:uppercase;}
+input,select{width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;
+  transition:border-color .2s,box-shadow .2s;outline:none;position:relative;z-index:2;}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,92,252,.15);}
+select option{background:var(--surface2);}
+.field-error{color:var(--red);font-size:12px;margin-top:5px;display:none;}
+.field-error.show{display:block;}
+.phone-wrap{display:flex;}
+.phone-prefix{padding:12px 14px;background:var(--surface2);border:1px solid var(--border);
+  border-right:none;border-radius:var(--radius) 0 0 var(--radius);color:var(--muted);
+  font-size:15px;font-family:'DM Mono',monospace;white-space:nowrap;
+  display:flex;align-items:center;gap:6px;}
+.phone-wrap input{border-radius:0 var(--radius) var(--radius) 0;}
+.pwd-wrap{position:relative;z-index:2;}
+.pwd-wrap input{padding-right:48px;}
+.eye-btn{position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;color:var(--muted);
+  padding:4px;transition:color .2s;display:flex;align-items:center;z-index:3;}
+.eye-btn:hover{color:var(--text);}
+.pwd-strength{display:flex;gap:4px;margin-top:8px;}
+.pwd-bar{flex:1;height:3px;border-radius:2px;background:var(--surface2);transition:background .3s;}
+.pwd-bar.weak{background:var(--red);}
+.pwd-bar.fair{background:var(--yellow);}
+.pwd-bar.strong{background:var(--green);}
+.pwd-hint{font-size:11px;color:var(--muted);margin-top:5px;}
+/* BUTTONS */
+.btn{width:100%;padding:14px;border-radius:var(--radius);font-family:'Syne',sans-serif;
+  font-weight:700;font-size:15px;cursor:pointer;border:none;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;position:relative;z-index:2;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:#9170ff;transform:translateY(-1px);box-shadow:0 8px 24px rgba(124,92,252,.35);}
+.btn-primary:active{transform:translateY(0);}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);margin-top:10px;}
+.btn-ghost:hover{color:var(--text);border-color:rgba(255,255,255,.15);background:var(--surface2);}
+.btn-warn{background:rgba(255,209,102,.1);color:var(--yellow);border:1px solid rgba(255,209,102,.3);}
+.btn-warn:hover{background:rgba(255,209,102,.2);}
+.btn-danger{background:rgba(255,77,109,.1);color:var(--red);border:1px solid rgba(255,77,109,.3);}
+.btn-danger:hover{background:rgba(255,77,109,.2);}
+.switch-link{text-align:center;margin-top:20px;font-size:13px;color:var(--muted);}
+.switch-link a{color:var(--accent);cursor:pointer;text-decoration:none;font-weight:500;}
+.switch-link a:hover{text-decoration:underline;}
+/* REG TYPE */
+.reg-type-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:28px;}
+.reg-type-btn{padding:14px;border-radius:var(--radius);cursor:pointer;
+  border:1px solid var(--border);background:var(--surface2);text-align:center;
+  transition:all .2s;position:relative;z-index:2;}
+.reg-type-btn:hover{border-color:var(--accent);}
+.reg-type-btn.selected{border-color:var(--accent);background:rgba(124,92,252,.1);}
+.reg-type-btn .rtb-icon{font-size:24px;margin-bottom:6px;}
+.reg-type-btn .rtb-label{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;}
+.reg-type-btn .rtb-desc{font-size:11px;color:var(--muted);margin-top:3px;}
+/* SECURITY QUESTION */
+.sq-options{display:flex;flex-direction:column;gap:8px;margin-bottom:4px;}
+.sq-opt{
+  padding:12px 16px;border-radius:10px;cursor:pointer;
+  border:1px solid var(--border);background:var(--surface2);
+  font-size:13px;transition:all .2s;display:flex;align-items:center;gap:12px;
+  user-select:none;position:relative;z-index:2;
+}
+.sq-opt:hover{border-color:var(--accent);background:rgba(124,92,252,.05);}
+.sq-opt.selected{border-color:var(--accent);background:rgba(124,92,252,.12);color:var(--text);}
+.sq-radio{
+  width:18px;height:18px;border-radius:50%;border:2px solid var(--muted);
+  flex-shrink:0;transition:all .2s;display:flex;align-items:center;justify-content:center;
+}
+.sq-opt.selected .sq-radio{border-color:var(--accent);background:var(--accent);}
+.sq-opt.selected .sq-radio::after{content:'';width:7px;height:7px;border-radius:50%;background:#fff;display:block;}
+#sq-answer-group{display:none;}
+/* TOAST */
+#toast{position:fixed;bottom:30px;right:30px;z-index:9999;padding:14px 22px;
+  border-radius:12px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:10px;
+  transform:translateY(80px);opacity:0;transition:all .3s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;max-width:340px;}
+#toast.show{transform:translateY(0);opacity:1;}
+#toast.success{background:#0d2b20;border:1px solid var(--green);color:var(--green);}
+#toast.error{background:#2b0d13;border:1px solid var(--red);color:var(--red);}
+#toast.info{background:#1a1230;border:1px solid var(--accent);color:var(--accent);}
+#toast.warn{background:#2b2100;border:1px solid var(--yellow);color:var(--yellow);}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;
+  border-radius:100px;font-size:12px;font-weight:600;font-family:'DM Mono',monospace;}
+.badge-user{background:rgba(124,92,252,.15);color:var(--accent);border:1px solid rgba(124,92,252,.3);}
+.badge-admin{background:rgba(224,92,252,.15);color:var(--accent2);border:1px solid rgba(224,92,252,.3);}
+/* INFO BANNERS */
+.info-banner{border-radius:var(--radius);padding:14px 16px;margin-bottom:18px;
+  font-size:13px;line-height:1.5;background:rgba(255,209,102,.07);
+  border:1px solid rgba(255,209,102,.25);color:var(--yellow);}
+.info-banner.danger{background:rgba(255,77,109,.07);border-color:rgba(255,77,109,.25);color:var(--red);}
+.info-banner.success{background:rgba(45,255,180,.07);border-color:rgba(45,255,180,.25);color:var(--green);}
+.info-banner.accent{background:rgba(124,92,252,.07);border-color:rgba(124,92,252,.3);color:#b8aaff;}
+/* SUCCESS CARD */
+.success-card{background:linear-gradient(135deg,rgba(45,255,180,.08),rgba(124,92,252,.08));
+  border:1px solid rgba(45,255,180,.25);border-radius:var(--radius);
+  padding:24px;margin-bottom:24px;text-align:center;}
+.reg-id{font-family:'DM Mono',monospace;font-size:26px;font-weight:500;
+  color:var(--green);letter-spacing:2px;margin:10px 0;}
+.reg-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;
+  padding:32px;width:100%;max-width:440px;transform:translateY(20px);
+  transition:transform .2s;max-height:90vh;overflow-y:auto;}
+.modal-overlay.open .modal{transform:translateY(0);}
+.modal-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:6px;}
+.modal-sub{color:var(--muted);font-size:13px;margin-bottom:20px;line-height:1.5;}
+.confirm-btns{display:flex;gap:10px;margin-top:20px;}
+.confirm-btns .btn{flex:1;margin-top:0;}
+/* ADMIN */
+.admin-topbar{max-width:980px;margin:24px auto 0;padding:0 24px;}
+.admin-header-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:24px 28px;display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:16px;margin-bottom:24px;}
+.admin-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:16px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;}
+.stat-num{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;}
+.stat-label{font-size:12px;color:var(--muted);margin-top:2px;}
+.admin-tabs{display:flex;gap:4px;margin-bottom:24px;background:var(--surface);padding:6px;
+  border-radius:12px;border:1px solid var(--border);width:fit-content;flex-wrap:wrap;}
+.admin-tab{padding:8px 20px;border-radius:9px;cursor:pointer;font-size:13px;
+  font-weight:500;color:var(--muted);transition:all .2s;}
+.admin-tab.active{background:var(--accent);color:#fff;}
+.admin-tab-panel{display:none;}
+.admin-tab-panel.active{display:block;}
+.table-toolbar{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;flex-wrap:wrap;gap:12px;}
+.table-toolbar h3{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;}
+.search-input{padding:10px 16px;border-radius:10px;width:240px;background:var(--surface2);
+  border:1px solid var(--border);color:var(--text);font-size:14px;outline:none;}
+.search-input:focus{border-color:var(--accent);}
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+.table-scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead tr{border-bottom:1px solid var(--border);}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);
+  padding:12px 16px;text-align:left;font-weight:600;white-space:nowrap;}
+td{padding:13px 16px;font-size:14px;border-bottom:1px solid rgba(255,255,255,.04);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,.02);}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty-state .icon{font-size:40px;margin-bottom:12px;}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);
+  display:inline-block;margin-right:7px;}
+.req-card{background:var(--surface2);border:1px solid rgba(255,209,102,.2);
+  border-radius:var(--radius);padding:16px 20px;display:flex;align-items:center;
+  justify-content:space-between;gap:16px;margin-bottom:10px;flex-wrap:wrap;}
+.req-name{font-weight:600;font-size:15px;}
+.req-meta{font-size:12px;color:var(--muted);margin-top:3px;font-family:'DM Mono',monospace;}
+.req-actions{display:flex;gap:8px;}
+.btn-sm{padding:7px 16px;font-size:12px;font-family:'Syne',sans-serif;font-weight:700;
+  border-radius:8px;cursor:pointer;border:none;transition:all .2s;}
+.btn-approve{background:rgba(45,255,180,.1);color:var(--green);border:1px solid rgba(45,255,180,.3);}
+.btn-approve:hover{background:rgba(45,255,180,.2);}
+.btn-reject{background:rgba(255,77,109,.1);color:var(--red);border:1px solid rgba(255,77,109,.3);}
+.btn-reject:hover{background:rgba(255,77,109,.2);}
+.limit-bar-track{height:6px;border-radius:3px;background:var(--surface2);overflow:hidden;margin-top:8px;}
+.limit-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s;}
+.limit-label{font-size:12px;color:var(--muted);margin-top:6px;}
+.section-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px;margin-bottom:24px;}
+.section-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:20px;}
+.recovery-box{background:rgba(255,209,102,.06);border:1px solid rgba(255,209,102,.25);
+  border-radius:var(--radius);padding:16px 20px;margin:16px 0;font-family:'DM Mono',monospace;
+  font-size:18px;text-align:center;color:var(--yellow);letter-spacing:4px;font-weight:500;}
+/* FINANCE */
+.fin-wrap{max-width:1100px;margin:0 auto;padding:30px 24px 60px;}
+.fin-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+.fin-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;}
+.fin-tabs{display:flex;gap:4px;background:var(--surface);padding:5px;border-radius:12px;
+  border:1px solid var(--border);flex-wrap:wrap;margin-bottom:24px;}
+.fin-tab{padding:8px 18px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);transition:all .2s;}
+.fin-tab.active{background:var(--accent);color:#fff;}
+.fin-tab-panel{display:none;}
+.fin-tab-panel.active{display:block;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-bottom:24px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:22px 24px;position:relative;overflow:hidden;}
+.kpi-card::before{content:'';position:absolute;top:0;right:0;width:80px;height:80px;
+  border-radius:0 16px 0 80px;opacity:.15;}
+.kpi-card.green::before{background:var(--green);}
+.kpi-card.red::before{background:var(--red);}
+.kpi-card.yellow::before{background:var(--yellow);}
+.kpi-card.accent::before{background:var(--accent);}
+.kpi-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;}
+.kpi-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;}
+.kpi-sub{font-size:12px;color:var(--muted);margin-top:4px;}
+.risk-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:24px;}
+.risk-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:12px;}
+.risk-bar-track{height:12px;border-radius:6px;background:var(--surface2);overflow:hidden;margin-bottom:8px;}
+.risk-bar-fill{height:100%;border-radius:6px;transition:width .8s ease,background .8s ease;}
+.risk-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);}
+.risk-badge{display:inline-block;padding:6px 18px;border-radius:100px;
+  font-family:'DM Mono',monospace;font-size:13px;font-weight:600;margin-top:4px;}
+.risk-low{background:rgba(45,255,180,.1);color:var(--green);border:1px solid rgba(45,255,180,.3);}
+.risk-med{background:rgba(255,209,102,.1);color:var(--yellow);border:1px solid rgba(255,209,102,.3);}
+.risk-high{background:rgba(255,154,60,.1);color:var(--orange);border:1px solid rgba(255,154,60,.3);}
+.risk-crit{background:rgba(255,77,109,.1);color:var(--red);border:1px solid rgba(255,77,109,.3);}
+.stress-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:24px;}
+.stress-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:4px;}
+.stress-sub{font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.5;}
+.stress-meter-wrap{position:relative;height:18px;border-radius:9px;overflow:hidden;background:var(--surface2);margin-bottom:10px;}
+.stress-meter-fill{height:100%;border-radius:9px;transition:width 1s ease,background 1s ease;}
+.stress-score-num{font-family:'Syne',sans-serif;font-size:42px;font-weight:800;line-height:1;}
+.stress-factors{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:16px;}
+.stress-factor{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.stress-factor-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;}
+.stress-factor-val{font-family:'DM Mono',monospace;font-size:15px;font-weight:500;}
+.stress-factor-bar{height:4px;border-radius:2px;background:var(--surface);margin-top:8px;overflow:hidden;}
+.stress-factor-bar-fill{height:100%;border-radius:2px;transition:width .8s ease;}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;}
+.chart-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:16px;}
+.chart-wrap{position:relative;height:220px;}
+.entry-section{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px;}
+.category-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:20px;}
+.cat-btn{padding:10px 14px;border-radius:10px;cursor:pointer;border:1px solid var(--border);
+  background:var(--surface2);text-align:center;transition:all .2s;font-size:13px;font-weight:500;}
+.cat-btn:hover{border-color:var(--accent);}
+.cat-btn.active{border-color:var(--accent);background:rgba(124,92,252,.1);color:var(--accent);}
+.cat-btn .cat-icon{font-size:18px;display:block;margin-bottom:4px;}
+/* CALENDAR */
+.cal-wrap{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:24px;}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.cal-nav{background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:16px;transition:all .2s;}
+.cal-nav:hover{border-color:var(--accent);color:var(--accent);}
+.cal-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal-day-header{text-align:center;font-size:11px;color:var(--muted);font-weight:600;
+  padding:6px 0;text-transform:uppercase;letter-spacing:.5px;}
+.cal-day{min-height:68px;border-radius:10px;padding:6px;border:1px solid transparent;
+  cursor:pointer;transition:all .2s;position:relative;}
+.cal-day:hover:not(.other-month){border-color:var(--accent);background:rgba(124,92,252,.05);}
+.cal-day.other-month{opacity:.3;cursor:default;}
+.cal-day.today{border-color:var(--accent);background:rgba(124,92,252,.08);}
+.cal-day.has-data{background:rgba(45,255,180,.04);}
+.cal-day-num{font-size:13px;font-weight:500;}
+.cal-day-total{font-size:10px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace;}
+.cal-day-risk{font-size:9px;margin-top:3px;padding:2px 5px;border-radius:4px;display:inline-block;font-weight:600;}
+/* MONTHLY */
+.cat-breakdown{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px;}
+.cat-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;}
+.cat-item-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.cat-item-name{font-size:13px;font-weight:600;}
+.cat-item-amt{font-family:'DM Mono',monospace;font-size:14px;font-weight:500;}
+.cat-mini-bar{height:4px;border-radius:2px;background:var(--surface2);overflow:hidden;}
+.cat-mini-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.monthly-flags{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+.flag-item{background:var(--surface2);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:14px;}
+.flag-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.flag-text{font-size:14px;line-height:1.5;}
+.suggestion-list{display:flex;flex-direction:column;gap:10px;}
+.suggestion-item{background:var(--surface2);border-left:3px solid var(--accent);
+  border-radius:0 12px 12px 0;padding:14px 18px;font-size:14px;line-height:1.6;}
+/* PROFILE */
+.profile-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;
+  padding:28px;margin-bottom:20px;display:grid;grid-template-columns:72px 1fr;gap:20px;align-items:center;}
+.avatar{width:72px;height:72px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#fff;}
+.profile-info h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:3px;}
+.profile-info p{color:var(--muted);font-size:13px;margin-bottom:8px;}
+.profile-id{font-family:'DM Mono',monospace;font-size:12px;color:var(--green);
+  background:rgba(45,255,180,.08);padding:4px 10px;border-radius:6px;display:inline-block;}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px;}
+/* EXPENSE CATEGORY CARDS (50-30-20 style) */
+.exp-cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:16px;}
+.exp-cat-card{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:16px;transition:border-color .2s;}
+.exp-cat-card.over-budget{border-color:var(--red);background:rgba(255,77,109,.06);}
+.exp-cat-header{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.exp-cat-icon{font-size:18px;}
+.exp-cat-name{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.6px;}
+.exp-cat-budget{font-size:12px;color:var(--muted);margin-bottom:10px;}
+.exp-cat-input{width:100%;padding:10px 12px;background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;color:var(--text);font-family:'DM Mono',monospace;font-size:16px;
+  outline:none;transition:border-color .2s;}
+.exp-cat-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,92,252,.15);}
+.exp-cat-input.input-over{border-color:var(--red);}
+.exp-cat-input.input-over:focus{box-shadow:0 0 0 3px rgba(255,77,109,.15);}
+.exp-cat-warn{color:var(--yellow);font-size:12px;margin-top:7px;align-items:center;gap:4px;font-weight:500;}
+.savings-info-card{background:rgba(255,209,102,.06);border:1px solid rgba(255,209,102,.25);
+  border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:14px;margin-bottom:4px;}
+/* OLD 50-30-20 panel classes kept for renderTodayDone compatibility */
+.rule-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px;}
+.rule-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:4px;}
+.rule-sub{font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.5;}
+.rule-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;}
+.rule-bucket{border-radius:14px;padding:18px 20px;border:1px solid;}
+.rule-bucket.needs{background:rgba(45,255,180,.06);border-color:rgba(45,255,180,.25);}
+.rule-bucket.wants{background:rgba(124,92,252,.06);border-color:rgba(124,92,252,.25);}
+.rule-bucket.savings{background:rgba(255,209,102,.06);border-color:rgba(255,209,102,.25);}
+.rule-bucket-icon{font-size:22px;margin-bottom:6px;}
+.rule-bucket-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:2px;}
+.rule-bucket-pct{font-size:12px;color:var(--muted);margin-bottom:10px;}
+.rule-bucket-monthly{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;margin-bottom:4px;}
+.rule-bucket-daily{font-size:12px;color:var(--muted);}
+.rule-cats{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.07);}
+.rule-cat-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;}
+.rule-cat-name{color:var(--muted);}
+.rule-cat-amt{font-family:'DM Mono',monospace;font-size:12px;}
+/* RESPONSIVE */
+@media(max-width:700px){
+  nav{padding:12px 16px;}
+  .auth-card{padding:24px 18px;}
+  .profile-card{grid-template-columns:1fr;text-align:center;}
+  .admin-topbar{padding:0 12px;}
+  .chart-grid{grid-template-columns:1fr;}
+  .fin-wrap{padding:20px 12px 60px;}
+  .kpi-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
+  .reg-type-btns{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo" onclick="handleLogoClick()">Finance<span>Buddy</span></div>
+  <div class="nav-tabs" id="navTabs">
+    <div class="nav-tab active" onclick="goTo('register')">Register</div>
+    <div class="nav-tab" onclick="goTo('login')">Login</div>
+  </div>
+</nav>
+<div id="toast"></div>
+
+<!-- ════════════════ REGISTER ════════════════ -->
+<div class="page active" id="page-register">
+  <div class="auth-wrap">
+    <div class="auth-card" id="regCard">
+      <div class="auth-title">Create Account</div>
+      <div class="auth-sub">Choose your account type to get started.</div>
+      <div class="reg-type-btns">
+        <div class="reg-type-btn selected" id="rtb-user" onclick="selectRegType('user')">
+          <div class="rtb-icon">👤</div>
+          <div class="rtb-label">User</div>
+          <div class="rtb-desc">Personal finance tracking</div>
+        </div>
+        <div class="reg-type-btn" id="rtb-admin" onclick="selectRegType('admin')">
+          <div class="rtb-icon">🛡️</div>
+          <div class="rtb-label">Admin</div>
+          <div class="rtb-desc">Requires approval</div>
+        </div>
+      </div>
+      <div id="adminInfoBanner" class="info-banner" style="display:none"></div>
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="reg-name" placeholder="John Doe"/>
+        <div class="field-error" id="err-name"></div>
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="reg-email" placeholder="you@example.com"/>
+        <div class="field-error" id="err-email"></div>
+      </div>
+      <div class="form-group">
+        <label>Phone <span style="color:var(--muted);text-transform:none;font-size:11px;letter-spacing:0">(10 digits, no +91)</span></label>
+        <div class="phone-wrap">
+          <div class="phone-prefix">🇮🇳 +91</div>
+          <input type="tel" id="reg-phone" placeholder="9XXXXXXXXX" maxlength="10"
+            oninput="this.value=this.value.replace(/\D/g,'')"/>
+        </div>
+        <div class="field-error" id="err-phone"></div>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <div class="pwd-wrap">
+          <input type="password" id="reg-password" placeholder="Min 6 characters"
+            oninput="strengthFor('reg-password','rb')"/>
+          <button class="eye-btn" type="button" onclick="toggleEye('reg-password',this)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+        <div class="pwd-strength">
+          <div class="pwd-bar" id="rb1"></div>
+          <div class="pwd-bar" id="rb2"></div>
+          <div class="pwd-bar" id="rb3"></div>
+        </div>
+        <div class="pwd-hint" id="rb-hint"></div>
+        <div class="field-error" id="err-pwd"></div>
+      </div>
+      <!-- SECURITY QUESTION -->
+      <div class="form-group">
+        <label>Security Question <span style="color:var(--muted);text-transform:none;font-size:11px;letter-spacing:0">(select one for password recovery)</span></label>
+        <div class="sq-options">
+          <div class="sq-opt" id="sq-opt-0" onclick="selectSQ(0)">
+            <div class="sq-radio" id="sq-radio-0"></div>
+            <span>What is your favourite colour?</span>
+          </div>
+          <div class="sq-opt" id="sq-opt-1" onclick="selectSQ(1)">
+            <div class="sq-radio" id="sq-radio-1"></div>
+            <span>What is your date of birth?</span>
+          </div>
+          <div class="sq-opt" id="sq-opt-2" onclick="selectSQ(2)">
+            <div class="sq-radio" id="sq-radio-2"></div>
+            <span>What's your favourite place?</span>
+          </div>
+        </div>
+        <div class="field-error" id="err-sq"></div>
+      </div>
+      <div id="sq-answer-group" style="display:none">
+        <div class="form-group">
+          <label id="sq-answer-label">Your Answer</label>
+          <input type="text" id="reg-sq-answer" placeholder="Type your answer here"/>
+          <div class="field-error" id="err-sq-answer"></div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="registerUser()">✦ Register Now</button>
+      <div class="switch-link">Already have an account? <a onclick="goTo('login')">Sign In</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ LOGIN ════════════════ -->
+<div class="page" id="page-login">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-title">Welcome Back</div>
+      <div class="auth-sub">Sign in with your <strong style="color:var(--text)">email</strong>,
+        <strong style="color:var(--text)">phone</strong>, or <strong style="color:var(--text)">ID</strong>.</div>
+      <div class="form-group">
+        <label>Email / Phone / ID</label>
+        <input type="text" id="login-id" placeholder="email · 9XXXXXXXXX · USR-10001"/>
+        <div class="field-error" id="err-login-id">Enter your email, phone, or ID.</div>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <div class="pwd-wrap">
+          <input type="password" id="login-password" placeholder="Your password"/>
+          <button class="eye-btn" type="button" onclick="toggleEye('login-password',this)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+        <div class="field-error" id="err-login-pwd">Enter your password.</div>
+      </div>
+      <div style="text-align:right;margin-top:-10px;margin-bottom:18px">
+        <a onclick="goTo('forgot')" style="font-size:13px;color:var(--accent);cursor:pointer">Forgot password?</a>
+      </div>
+      <button class="btn btn-primary" onclick="loginUser()">→ Sign In</button>
+      <div class="switch-link">No account yet? <a onclick="goTo('register')">Register</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ FORGOT PASSWORD ════════════════ -->
+<div class="page" id="page-forgot">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <!-- Step 1: find account -->
+      <div id="fp-step-1">
+        <div class="auth-title">Reset Password</div>
+        <div class="auth-sub">Enter your registered email or phone number to find your account.</div>
+        <div class="form-group">
+          <label>Email or Phone (10 digits)</label>
+          <input type="text" id="fp-lookup" placeholder="you@example.com  or  9XXXXXXXXX"/>
+          <div class="field-error" id="err-fp-lookup"></div>
+        </div>
+        <button class="btn btn-primary" onclick="fpLookup()">Find My Account →</button>
+        <div class="switch-link"><a onclick="goTo('login')">← Back to Login</a></div>
+      </div>
+      <!-- Step 2: security question -->
+      <div id="fp-step-2" style="display:none">
+        <div class="auth-title">Security Question</div>
+        <div class="auth-sub">Answer the security question you set during registration.</div>
+        <div class="info-banner accent" id="fp-question-box" style="font-size:14px;font-weight:600;letter-spacing:.3px"></div>
+        <div class="form-group">
+          <label>Your Answer</label>
+          <input type="text" id="fp-sq-answer" placeholder="Type your answer"/>
+          <div class="field-error" id="err-fp-sq"></div>
+        </div>
+        <button class="btn btn-primary" onclick="fpVerifySQ()">Verify Answer →</button>
+        <button class="btn btn-ghost" onclick="fpGoto(1)">← Try Different Account</button>
+      </div>
+      <!-- Step 3: new password -->
+      <div id="fp-step-3" style="display:none">
+        <div class="auth-title">Set New Password</div>
+        <div class="auth-sub">Your identity is verified. Choose a strong new password.</div>
+        <div class="form-group">
+          <label>New Password</label>
+          <div class="pwd-wrap">
+            <input type="password" id="fp-new" placeholder="Min 6 characters"
+              oninput="strengthFor('fp-new','fpb')"/>
+            <button class="eye-btn" type="button" onclick="toggleEye('fp-new',this)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+          <div class="pwd-strength">
+            <div class="pwd-bar" id="fpb1"></div>
+            <div class="pwd-bar" id="fpb2"></div>
+            <div class="pwd-bar" id="fpb3"></div>
+          </div>
+          <div class="field-error" id="err-fp-new"></div>
+        </div>
+        <div class="form-group">
+          <label>Confirm Password</label>
+          <div class="pwd-wrap">
+            <input type="password" id="fp-confirm" placeholder="Repeat password"/>
+            <button class="eye-btn" type="button" onclick="toggleEye('fp-confirm',this)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+          <div class="field-error" id="err-fp-confirm"></div>
+        </div>
+        <button class="btn btn-primary" onclick="doResetPwd()">✓ Reset & Login</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ FINANCE DASHBOARD ════════════════ -->
+<div class="page" id="page-finance">
+  <div class="fin-wrap">
+    <div class="fin-header">
+      <div>
+        <div class="fin-title" id="fin-greeting">My Finance Dashboard</div>
+        <div style="color:var(--muted);font-size:13px;margin-top:3px" id="fin-date-str"></div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <span class="badge badge-user">USER</span>
+        <button class="btn btn-ghost" style="width:auto;padding:8px 18px;margin-top:0" onclick="logout()">Logout</button>
+      </div>
+    </div>
+    <div class="fin-tabs">
+      <div class="fin-tab active" onclick="finTab('today')">📊 Today's Entry</div>
+      <div class="fin-tab" onclick="finTab('analysis')">📈 Analysis</div>
+      <div class="fin-tab" onclick="finTab('calendar')">📅 Calendar</div>
+      <div class="fin-tab" onclick="finTab('monthly')">📋 Monthly Report</div>
+      <div class="fin-tab" onclick="finTab('profile')">👤 Profile</div>
+    </div>
+    <div class="fin-tab-panel active" id="ftp-today"><div id="todayEntryArea"></div></div>
+    <div class="fin-tab-panel" id="ftp-analysis">
+      <div class="kpi-grid" id="kpiGrid"></div>
+      <div class="risk-card" id="riskCard"></div>
+<div class="stress-card" id="stressCard"></div>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="chart-title">📊 Daily Spending — Last 14 Days</div>
+          <div class="chart-wrap"><canvas id="chartDaily"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">🥧 Category Breakdown — This Month</div>
+          <div class="chart-wrap"><canvas id="chartCat"></canvas></div>
+        </div>
+      </div>
+      <div class="section-card">
+        <div class="section-title">📦 Category-wise Daily Spending</div>
+        <div class="chart-wrap" style="height:260px"><canvas id="chartCatDaily"></canvas></div>
+      </div>
+      <div class="section-card">
+        <div class="section-title">💡 Smart Suggestions</div>
+        <div class="suggestion-list" id="suggestionList"></div>
+      </div>
+    </div>
+    <div class="fin-tab-panel" id="ftp-calendar">
+      <div class="cal-wrap">
+        <div class="cal-header">
+          <div class="cal-nav" onclick="calNav(-1)">‹</div>
+          <div class="cal-title" id="calTitle"></div>
+          <div class="cal-nav" onclick="calNav(1)">›</div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+    </div>
+    <div class="fin-tab-panel" id="ftp-monthly"><div id="monthlyReport"></div></div>
+    <div class="fin-tab-panel" id="ftp-profile">
+      <div class="profile-card">
+        <div class="avatar" id="fin-avatar">J</div>
+        <div class="profile-info">
+          <h2 id="fin-uname">—</h2>
+          <p id="fin-uemail">—</p>
+          <div class="profile-id" id="fin-uid">—</div>
+        </div>
+      </div>
+      <div class="section-card" style="max-width:500px">
+        <div class="section-title">🔐 Change Password</div>
+        <div class="form-group">
+          <label>Current Password</label>
+          <div class="pwd-wrap">
+            <input type="password" id="cp-cur" placeholder="Current password"/>
+            <button class="eye-btn" type="button" onclick="toggleEye('cp-cur',this)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="field-error" id="err-cp-cur"></div>
+        </div>
+        <div class="form-group">
+          <label>New Password</label>
+          <div class="pwd-wrap">
+            <input type="password" id="cp-new" placeholder="Min 6 characters" oninput="strengthFor('cp-new','cpb')"/>
+            <button class="eye-btn" type="button" onclick="toggleEye('cp-new',this)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="pwd-strength"><div class="pwd-bar" id="cpb1"></div><div class="pwd-bar" id="cpb2"></div><div class="pwd-bar" id="cpb3"></div></div>
+          <div class="field-error" id="err-cp-new"></div>
+        </div>
+        <div class="form-group">
+          <label>Confirm New Password</label>
+          <div class="pwd-wrap">
+            <input type="password" id="cp-conf" placeholder="Repeat"/>
+            <button class="eye-btn" type="button" onclick="toggleEye('cp-conf',this)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="field-error" id="err-cp-conf"></div>
+        </div>
+        <button class="btn btn-primary" style="max-width:220px" onclick="userChangePwd()">Update Password</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ ADMIN DASHBOARD ════════════════ -->
+<div class="page" id="page-admin-dashboard">
+  <div class="admin-topbar">
+    <div class="admin-header-card">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800">Admin Panel</div>
+        <div style="color:var(--muted);font-size:13px;margin-top:3px">Full system control</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <span class="badge badge-admin">ADMIN</span>
+        <span id="ad-name-badge" style="font-family:'DM Mono',monospace;font-size:13px;color:var(--muted)"></span>
+        <button class="btn btn-ghost" style="width:auto;padding:8px 18px;margin-top:0" onclick="logout()">Logout</button>
+      </div>
+    </div>
+    <div class="admin-stats">
+      <div class="stat-card"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Total Registered</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-users">0</div><div class="stat-label">Regular Users</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-admins">0</div><div class="stat-label">Admins (max 3)</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-today">0</div><div class="stat-label">Joined Today</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-pending" style="color:var(--yellow)">0</div><div class="stat-label">Pending</div></div>
+    </div>
+    <div class="admin-tabs">
+      <div class="admin-tab active" onclick="aTab('users')">All Users</div>
+      <div class="admin-tab" onclick="aTab('admins')">Admins</div>
+      <div class="admin-tab" onclick="aTab('pending')">Pending
+        <span id="pbadge" style="display:none;background:var(--yellow);color:#000;border-radius:100px;padding:1px 7px;font-size:10px;margin-left:4px"></span>
+      </div>
+      <div class="admin-tab" onclick="aTab('settings')">Settings</div>
+    </div>
+    <div class="admin-tab-panel active" id="atp-users">
+      <div class="table-toolbar">
+        <h3>Registered Users</h3>
+        <input class="search-input" type="text" placeholder="Search name / email / ID…" oninput="filterUsers(this.value)"/>
+      </div>
+      <div class="table-card"><div class="table-scroll">
+        <table>
+          <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="userTbody"></tbody>
+        </table>
+      </div><div class="empty-state" id="userEmpty" style="display:none"><div class="icon">📭</div><div>No users yet.</div></div></div>
+    </div>
+    <div class="admin-tab-panel" id="atp-admins">
+      <div class="table-toolbar"><h3>Admin Accounts</h3></div>
+      <div style="margin-bottom:16px">
+        <div class="limit-bar-track"><div class="limit-bar-fill" id="adminBar" style="width:0%"></div></div>
+        <div class="limit-label" id="adminBarLabel">0 / 3 slots used</div>
+      </div>
+      <div class="table-card"><div class="table-scroll">
+        <table>
+          <thead><tr><th>Admin ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th><th>Action</th></tr></thead>
+          <tbody id="adminTbody"></tbody>
+        </table>
+      </div><div class="empty-state" id="adminEmpty" style="display:none"><div class="icon">🛡️</div><div>No admins yet.</div></div></div>
+    </div>
+    <div class="admin-tab-panel" id="atp-pending">
+      <div class="table-toolbar"><h3>Admin Requests</h3></div>
+      <div id="pendingList"><div class="empty-state"><div class="icon">✅</div><div>No pending requests.</div></div></div>
+    </div>
+    <div class="admin-tab-panel" id="atp-settings">
+      <div class="section-card" style="max-width:500px">
+        <div class="section-title">🔐 Change My Password</div>
+        <div class="form-group"><label>Current Password</label>
+          <div class="pwd-wrap"><input type="password" id="acp-cur"/>
+            <button class="eye-btn" type="button" onclick="toggleEye('acp-cur',this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div><div class="field-error" id="err-acp-cur"></div>
+        </div>
+        <div class="form-group"><label>New Password</label>
+          <div class="pwd-wrap"><input type="password" id="acp-new"/>
+            <button class="eye-btn" type="button" onclick="toggleEye('acp-new',this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div><div class="field-error" id="err-acp-new"></div>
+        </div>
+        <div class="form-group"><label>Confirm New Password</label>
+          <div class="pwd-wrap"><input type="password" id="acp-conf"/>
+            <button class="eye-btn" type="button" onclick="toggleEye('acp-conf',this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div><div class="field-error" id="err-acp-conf"></div>
+        </div>
+        <button class="btn btn-primary" style="max-width:220px" onclick="adminChangePwd()">Update Password</button>
+      </div>
+      <div class="section-card" style="max-width:500px">
+        <div class="section-title">🔑 Master Recovery Code</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.6">Emergency admin bypass code.</div>
+        <div class="recovery-box" id="rcDisplay">••••••••••••</div>
+        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn btn-ghost" style="margin-top:0;width:auto;padding:10px 20px;font-size:13px" onclick="toggleRC()">👁 Reveal</button>
+          <button class="btn btn-ghost" style="margin-top:0;width:auto;padding:10px 20px;font-size:13px" onclick="regenRC()">🔄 Regenerate</button>
+        </div>
+        <div style="font-size:11px;color:var(--red);margin-top:10px">⚠️ Regenerating invalidates the old code.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Reset admin pwd -->
+<div class="modal-overlay" id="raModal">
+  <div class="modal">
+    <div class="modal-title">Reset Admin Password</div>
+    <div class="modal-sub" id="raSub"></div>
+    <div class="form-group"><label>New Password</label>
+      <div class="pwd-wrap"><input type="password" id="ra-pwd" placeholder="Min 6 characters"/>
+        <button class="eye-btn" type="button" onclick="toggleEye('ra-pwd',this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      </div><div class="field-error" id="err-ra-pwd"></div>
+    </div>
+    <button class="btn btn-primary" onclick="doResetAdminPwd()">Reset Password</button>
+    <button class="btn btn-ghost" onclick="closeModal('raModal')">Cancel</button>
+  </div>
+</div>
+
+<!-- MODAL: Prev day popup -->
+<div class="modal-overlay" id="prevDayModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title" style="font-size:18px">📅 Quick Check-in</div>
+    <div class="modal-sub" id="prevDayText" style="font-size:14px;line-height:1.7"></div>
+    <div class="confirm-btns">
+      <button class="btn btn-primary" style="margin-top:0" onclick="prevDayAnswer()">YES</button>
+      <button class="btn btn-ghost" style="margin-top:0" onclick="prevDayAnswer()">NO</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Calendar day detail -->
+<div class="modal-overlay" id="calDetailModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title" id="calDetailTitle"></div>
+    <div id="calDetailBody" style="margin-top:12px"></div>
+    <button class="btn btn-ghost" onclick="closeModal('calDetailModal')" style="margin-top:16px">Close</button>
+  </div>
+</div>
+
+<!-- MODAL: Delete user confirm -->
+<div class="modal-overlay" id="deleteUserModal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title">⚠️ Remove User</div>
+    <div class="modal-sub" id="deleteUserSub"></div>
+    <div class="confirm-btns">
+      <button class="btn btn-danger" style="margin-top:0" onclick="confirmDeleteUser()">Yes, Remove</button>
+      <button class="btn btn-ghost" style="margin-top:0" onclick="closeModal('deleteUserModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Edit expenses (one time) -->
+<div class="modal-overlay" id="editExpModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title">✏️ Edit Today's Expenses</div>
+    <div class="modal-sub">⚠️ You can only edit expenses <strong>once per day</strong>.</div>
+    <div id="editExpBody"></div>
+    <button class="btn btn-primary" onclick="saveEditedExpenses()">Save Changes</button>
+    <button class="btn btn-ghost" onclick="closeModal('editExpModal')">Cancel</button>
+  </div>
+</div>
+
+<!-- MODAL: Edit income -->
+<div class="modal-overlay" id="editIncModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title">✏️ Edit Today's Income</div>
+    <div class="modal-sub">This replaces today's income — it does not add to it.</div>
+    <div class="form-group">
+      <label>New Income Amount (₹)</label>
+      <input type="number" id="editIncInput" placeholder="e.g. 50000" min="0"/>
+      <div class="field-error" id="err-editInc"></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveEditedIncome()">Update Income</button>
+    <button class="btn btn-ghost" onclick="closeModal('editIncModal')">Cancel</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════════════
+const ADMIN_MAX = 3;
+const RECOVERY_KEY = 'nreg_recovery';
+const SQ_QUESTIONS = [
+  'What is your favourite colour?',
+  'What is your date of birth?',
+  "What's your favourite place?"
+];
+const CATEGORIES = [
+  {id:'food',      label:'Food',          icon:'🍔'},
+  {id:'transport', label:'Transport',     icon:'🚗'},
+  {id:'shopping',  label:'Shopping',      icon:'🛍️'},
+  {id:'health',    label:'Health',        icon:'💊'},
+  {id:'bills',     label:'Bills',         icon:'📄'},
+  {id:'entertainment',label:'Entertainment',icon:'🎬'},
+  {id:'education', label:'Education',     icon:'📚'},
+  {id:'others',    label:'Others',        icon:'📦'},
+];
+
+// ═══════════════════════════════════════════════════
+//  DATABASE
+// ═══════════════════════════════════════════════════
+/*const DB = {
+  users:   {get:()=>JSON.parse(localStorage.getItem('nreg_users')||'[]'),    set:v=>localStorage.setItem('nreg_users',JSON.stringify(v))},
+  pending: {get:()=>JSON.parse(localStorage.getItem('nreg_pend')||'[]'),     set:v=>localStorage.setItem('nreg_pend',JSON.stringify(v))},
+  session: {get:()=>JSON.parse(localStorage.getItem('nreg_sess')||'null'),   set:v=>localStorage.setItem('nreg_sess',JSON.stringify(v)), del:()=>localStorage.removeItem('nreg_sess')},
+  uctr:    {get:()=>parseInt(localStorage.getItem('nreg_uctr')||'10000'),    inc:()=>{const c=DB.uctr.get()+1; localStorage.setItem('nreg_uctr',c); return c;}},
+  actr:    {get:()=>parseInt(localStorage.getItem('nreg_actr')||'20000'),    inc:()=>{const c=DB.actr.get()+1; localStorage.setItem('nreg_actr',c); return c;}},
+  recovery:{get:()=>localStorage.getItem(RECOVERY_KEY)||'NEXREG-2024',       set:v=>localStorage.setItem(RECOVERY_KEY,v)},
+  fin:{
+    getAll:(uid)=>JSON.parse(localStorage.getItem('fin_'+uid)||'{}'),
+    setAll:(uid,d)=>localStorage.setItem('fin_'+uid,JSON.stringify(d)),
+    getDay:(uid,ds)=>{const a=DB.fin.getAll(uid); return a[ds]||null;},
+    setDay:(uid,ds,e)=>{const a=DB.fin.getAll(uid); a[ds]=e; DB.fin.setAll(uid,a);}
+  }
+};*/
+// ═══════════════════════════════════════════════════
+//  API-BASED DB (replaces localStorage)
+// ═══════════════════════════════════════════════════
+const API = 'http://localhost:3000/api';
+async function apiFetch(url, options={}) {
+  try {
+    console.log('apiFetch calling:', url, options);
+    const res = await fetch(url, {
+      headers: { 'Content-Type': 'application/json' },
+      ...options
+    });
+    console.log('apiFetch response status:', res.status);
+    const data = await res.json();
+    console.log('apiFetch response data:', data);
+    return data;
+  } catch(e) {
+    console.error('apiFetch ERROR:', e.message);
+    return { success: false, message: e.message };
+  }
+}
+
+const DB = {
+  users: {
+    get: () => apiFetch(`${API}/users`).then(d => d.users || []),
+    set: () => {}
+  },
+  pending: {
+    get: () => apiFetch(`${API}/pending`).then(d => d.pending || []),
+    set: () => {}
+  },
+  session: {
+    get: () => JSON.parse(localStorage.getItem('fin_sess') || 'null'),
+    set: v => localStorage.setItem('fin_sess', JSON.stringify(v)),
+    del: () => localStorage.removeItem('fin_sess')
+  },
+  uctr: { get: ()=>0, inc: ()=>0 },
+  actr: { get: ()=>0, inc: ()=>0 },
+  recovery: {
+    get: () => apiFetch(`${API}/recovery`).then(d => d.code || ''),
+    set: v => apiFetch(`${API}/recovery`, { method:'PUT', body: JSON.stringify({ code:v }) })
+  },
+  fin: {
+    getAll: (uid) => apiFetch(`${API}/finance/${uid}`).then(d => d.data || {}),
+    getDay: async (uid, ds) => {
+      const all = await apiFetch(`${API}/finance/${uid}`).then(d => d.data || {});
+      return all[ds] || null;
+    },
+    setDay: (uid, ds, entry) => apiFetch(`${API}/finance/entry`, {
+      method: 'POST',
+      body: JSON.stringify({ user_id:uid, entry_date:ds, ...entry })
+    }),
+    setAll: () => {}
+  }
+};
+const genUID=()=>`USR-${String(DB.uctr.inc()).padStart(5,'0')}`;
+const genAID=()=>`ADM-${String(DB.actr.inc()).padStart(5,'0')}`;
+
+// ═══════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════
+const todayStr=()=>new Date().toISOString().slice(0,10);
+const dateStrOf=d=>d.toISOString().slice(0,10);
+const fmt=iso=>new Date(iso).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+const fmtCur=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:0});
+const esc=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const prevDayOf=ds=>{const d=new Date(ds); d.setDate(d.getDate()-1); return dateStrOf(d);};
+const SVG_EYE=`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const SVG_EYEOFF=`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+function toggleEye(id,btn){const i=document.getElementById(id);const s=i.type==='password';i.type=s?'text':'password';btn.innerHTML=s?SVG_EYEOFF:SVG_EYE;}
+function toast(msg,type='info'){const el=document.getElementById('toast');el.textContent=msg;el.className='show '+type;clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),3500);}
+function strengthFor(inputId,prefix){
+  const v=document.getElementById(inputId).value;
+  const bars=[1,2,3].map(i=>document.getElementById(prefix+i)).filter(Boolean);
+  bars.forEach(b=>b.className='pwd-bar');
+  if(!v)return;
+  const score=(v.length>=8?1:0)+(/[A-Z]/.test(v)&&/[0-9]/.test(v)?1:0)+(/[^A-Za-z0-9]/.test(v)?1:0);
+  const cls=score<=1?'weak':score===2?'fair':'strong';
+  for(let i=0;i<=Math.min(score,2);i++)bars[i].classList.add(cls);
+  const hint=document.getElementById(prefix+'-hint');
+  if(hint)hint.textContent=cls==='weak'?'Weak — add uppercase & numbers':cls==='fair'?'Fair — add special characters':'Strong ✓';
+}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.addEventListener('click',e=>{if(e.target.classList.contains('modal-overlay'))closeModal(e.target.id);});
+
+// ═══════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════
+function goTo(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  const m={register:0,login:1};
+  if(m[p]!==undefined)document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',i===m[p]));
+  // When going to forgot page, always show step 1
+  if(p==='forgot'){
+    ['fp-step-1','fp-step-2','fp-step-3'].forEach((id,i)=>{
+      const el=document.getElementById(id);
+      if(el)el.style.display=i===0?'block':'none';
+    });
+    fpUser=null;
+  }
+}
+function handleLogoClick(){if(!DB.session.get())goTo('register');}
+function showDash(u){
+  document.getElementById('navTabs').innerHTML=`<span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--muted)">Hi <strong style="color:var(--text)">${u.name.split(' ')[0]}</strong></span>`;
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  if(u.role==='admin'){document.getElementById('page-admin-dashboard').classList.add('active');renderAdmin(u);}
+  else{document.getElementById('page-finance').classList.add('active');initFinance(u);}
+}
+function logout(){
+  DB.session.del();
+  document.getElementById('navTabs').innerHTML=`<div class="nav-tab" onclick="goTo('register')">Register</div><div class="nav-tab active" onclick="goTo('login')">Login</div>`;
+  destroyCharts();goTo('login');toast('Logged out.','info');
+}
+
+// ═══════════════════════════════════════════════════
+//  REGISTER
+// ═══════════════════════════════════════════════════
+let regType='user', selectedSQ=-1;
+
+function selectRegType(t){
+  regType=t;
+  document.getElementById('rtb-user').classList.toggle('selected',t==='user');
+  document.getElementById('rtb-admin').classList.toggle('selected',t==='admin');
+  const banner=document.getElementById('adminInfoBanner');
+  if(t==='admin'){
+    const slots=ADMIN_MAX-DB.users.get().filter(u=>u.role==='admin').length;
+    if(slots<=0){banner.className='info-banner danger';banner.innerHTML='🚫 Admin slots are full (3/3).';}
+    else{banner.className='info-banner';banner.innerHTML=`⚠️ Admin accounts require approval. <strong>${slots} slot${slots>1?'s':''} remaining.</strong>`;}
+    banner.style.display='block';
+  } else banner.style.display='none';
+}
+
+// Called when user clicks any of the 3 security question options
+function selectSQ(idx){
+  selectedSQ=idx;
+  // Update radio styles
+  [0,1,2].forEach(i=>{
+    const opt=document.getElementById('sq-opt-'+i);
+    if(opt)opt.classList.toggle('selected',i===idx);
+  });
+  // Show answer input
+  const group=document.getElementById('sq-answer-group');
+  const lbl=document.getElementById('sq-answer-label');
+  const inp=document.getElementById('reg-sq-answer');
+  const err=document.getElementById('err-sq');
+  if(group)group.style.display='block';
+  if(lbl)lbl.textContent=SQ_QUESTIONS[idx];
+  if(inp){inp.value='';inp.focus();}
+  if(err)err.classList.remove('show');
+}
+
+async function registerUser(){
+  console.log('registerUser called');
+  const name=document.getElementById('reg-name').value.trim();
+  const email=document.getElementById('reg-email').value.trim().toLowerCase();
+  const phone=document.getElementById('reg-phone').value.trim();
+  const pwd=document.getElementById('reg-password').value;
+  console.log('values:', name, email, phone, pwd);
+  const sqAns=(document.getElementById('reg-sq-answer')?.value||'').trim();
+  const role=regType;
+  let ok=true;
+  const E=(id,msg)=>{const el=document.getElementById(id);if(el){el.textContent=msg;el.classList.add('show');}ok=false;};
+  const C=(id)=>{const el=document.getElementById(id);if(el)el.classList.remove('show');};
+  if(!name)E('err-name','Full name is required.');else C('err-name');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))E('err-email','Enter a valid email.');else C('err-email');
+  if(!/^\d{10}$/.test(phone))E('err-phone','Enter exactly 10 digits.');else C('err-phone');
+  if(pwd.length<6)E('err-pwd','Min 6 characters.');else C('err-pwd');
+  if(selectedSQ<0)E('err-sq','Please select a security question.');else C('err-sq');
+  if(selectedSQ>=0&&!sqAns)E('err-sq-answer','Please enter your answer.');else C('err-sq-answer');
+  if(!ok)return;
+  console.log('validation passed, role is:', role);
+  console.log('selectedSQ is:', selectedSQ);
+  
+
+  if(role==='admin'){
+    // Admin goes to pending
+    const result = await apiFetch(`${API}/pending`, {
+      method: 'POST',
+      body: JSON.stringify({
+  name, email, phone,
+        password: pwd,
+        security_question: SQ_QUESTIONS[selectedSQ],
+        security_answer: sqAns.toLowerCase()
+      })
+    });
+    if(!result.success){
+      if(result.message && result.message.includes('Duplicate'))
+        E('err-email','Email already registered.');
+      else toast(result.message||'Registration failed.','error');
+      return;
+    }
+    // Show success screen same as before
+    const fakeReq = {
+      id:'ADM-PENDING', name, email, phone,
+      role:'admin', requestedAt: new Date().toISOString()
+    };
+    showRegSuccess(fakeReq, true);
+    toast('Admin request submitted!','warn');
+
+  } else {
+    // Regular user registration
+    console.log('calling register API with:', {name, email, phone, role:'user'});
+    const result = await apiFetch(`${API}/register`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name, email, phone,
+        password: pwd,
+        role: 'user',
+        security_question: SQ_QUESTIONS[selectedSQ],
+        security_answer: sqAns.toLowerCase()
+      })
+    });
+    if(!result.success){
+      if(result.message && result.message.includes('already'))
+        E('err-email','Email already registered.');
+      else toast(result.message||'Registration failed.','error');
+      return;
+    }
+    showRegSuccess(result.user, false);
+    toast('Account created! ID: '+result.user.id,'success');
+  }
+}
+
+function showRegSuccess(u,isPending){
+  document.getElementById('regCard').innerHTML=`
+    <div class="success-card" style="${isPending?'border-color:rgba(255,209,102,.3)':''}">
+      <div style="font-size:36px;margin-bottom:8px">${isPending?'⏳':'🎉'}</div>
+      <div class="reg-label">${isPending?'Your Request ID':'Your Registration ID'}</div>
+      <div class="reg-id" style="${isPending?'color:var(--yellow)':''}">${u.id}</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:6px">Save this ID — it uniquely identifies you.</div>
+    </div>
+    <div style="font-size:15px;color:var(--text);margin-bottom:20px">
+      ${isPending?`Hi <strong>${u.name}</strong>, your admin request is pending approval.`
+                 :`Welcome, <strong>${u.name}</strong>! Your account is ready.`}
+    </div>
+    <button class="btn btn-primary" onclick="goTo('login')">→ Go to Login</button>
+    <button class="btn btn-ghost" onclick="location.reload()">Register Another</button>`;
+}
+
+// ═══════════════════════════════════════════════════
+//  LOGIN
+// ═══════════════════════════════════════════════════
+async function loginUser(){
+  const raw=document.getElementById('login-id').value.trim().toLowerCase();
+  const pwd=document.getElementById('login-password').value;
+  if(!raw){document.getElementById('err-login-id').classList.add('show');return;}
+  else document.getElementById('err-login-id').classList.remove('show');
+  if(!pwd){document.getElementById('err-login-pwd').classList.add('show');return;}
+  else document.getElementById('err-login-pwd').classList.remove('show');
+
+  const result = await apiFetch(`${API}/login`, {
+    method: 'POST',
+    body: JSON.stringify({ email: raw, password: pwd, phone: raw })
+  });
+
+  if(!result.success){
+    toast(result.message||'Invalid credentials.','error');
+    return;
+  }
+
+  DB.session.set(result.user);
+  toast('Welcome back, '+result.user.name.split(' ')[0]+'!','success');
+  showDash(result.user);
+}
+
+// ═══════════════════════════════════════════════════
+//  FORGOT PASSWORD — Security Question flow
+// ═══════════════════════════════════════════════════
+let fpUser=null;
+
+function fpGoto(step){
+  ['fp-step-1','fp-step-2','fp-step-3'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    if(el)el.style.display=i===step-1?'block':'none';
+  });
+  if(step===1)fpUser=null;
+}
+
+async function fpLookup(){
+  const val=document.getElementById('fp-lookup').value.trim().toLowerCase();
+  const err=document.getElementById('err-fp-lookup');
+  err.classList.remove('show');
+  if(!val){err.textContent='Please enter your email or phone.';err.classList.add('show');return;}
+
+  const result = await apiFetch(`${API}/forgot/lookup`, {
+    method: 'POST',
+    body: JSON.stringify({ lookup: val })
+  });
+
+  if(!result.success){
+    err.textContent='No account found with this email or phone.';
+    err.classList.add('show');
+    return;
+  }
+
+  const found = result.user;
+  if(!found.security_question){
+    err.textContent='This account has no security question. Contact an admin.';
+    err.classList.add('show');
+    return;
+  }
+
+  fpUser = found;
+  const qBox = document.getElementById('fp-question-box');
+  if(qBox) qBox.textContent = '🔐  ' + found.security_question;
+  const ansInp = document.getElementById('fp-sq-answer');
+  if(ansInp){ ansInp.value=''; setTimeout(()=>ansInp.focus(), 100); }
+  document.getElementById('err-fp-sq').classList.remove('show');
+  fpGoto(2);
+}
+
+async function fpVerifySQ(){
+  const ans=(document.getElementById('fp-sq-answer').value||'').trim().toLowerCase();
+  const err=document.getElementById('err-fp-sq');
+  err.classList.remove('show');
+  if(!ans){err.textContent='Please enter your answer.';err.classList.add('show');return;}
+
+  const result = await apiFetch(`${API}/forgot/verify`, {
+    method: 'POST',
+    body: JSON.stringify({ id: fpUser.id, answer: ans })
+  });
+
+  if(!result.success){
+    err.textContent='Incorrect answer. Please try again.';
+    err.classList.add('show');
+    return;
+  }
+
+  toast('Answer verified!','success');
+  fpGoto(3);
+  setTimeout(()=>{const el=document.getElementById('fp-new');if(el)el.focus();},100);
+}
+
+async function doResetPwd(){
+  const newp=document.getElementById('fp-new').value;
+  const conf=document.getElementById('fp-confirm').value;
+  const e1=document.getElementById('err-fp-new'),e2=document.getElementById('err-fp-confirm');
+  e1.classList.remove('show');e2.classList.remove('show');
+  if(newp.length<6){e1.textContent='Min 6 characters.';e1.classList.add('show');return;}
+  if(newp!==conf){e2.textContent='Passwords do not match.';e2.classList.add('show');return;}
+
+  const result = await apiFetch(`${API}/users/${fpUser.id}/password`, {
+    method: 'PUT',
+    body: JSON.stringify({ password: newp })
+  });
+
+  if(!result.success){
+    toast('Failed to reset password. Try again.','error');
+    return;
+  }
+
+  toast('Password reset! Please log in.','success');
+  setTimeout(()=>{fpGoto(1);goTo('login');},1200);
+}
+
+// ═══════════════════════════════════════════════════
+//  FINANCE INIT
+// ═══════════════════════════════════════════════════
+let currentUser=null, calYear=0, calMonth=0;
+
+async function initFinance(u){
+  currentUser=u;
+  document.getElementById('fin-avatar').textContent=u.name[0].toUpperCase();
+  document.getElementById('fin-uname').textContent=u.name;
+  document.getElementById('fin-uemail').textContent=u.email;
+  document.getElementById('fin-uid').textContent=u.id;
+  document.getElementById('fin-date-str').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('fin-greeting').textContent='Hi, '+u.name.split(' ')[0]+'! 👋';
+  const now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();
+  const td=todayStr();
+
+  const todayEntry = await DB.fin.getDay(u.id, td);
+  if(todayEntry){
+    renderTodayDone(todayEntry);
+  } else {
+    const allData = await DB.fin.getAll(u.id);
+    if(Object.keys(allData).length>0){
+      const prevDate=prevDayOf(td);
+      const prevEntry = allData[prevDate] || null;
+      let msg=prevEntry
+        ?`Did you have any unusual spending yesterday? Total spent was <strong>${fmtCur(Object.values(prevEntry.expenses||{}).reduce((a,b)=>a+b,0))}</strong>.`
+        :'Did you have any spending yesterday that wasn\'t recorded?';
+      document.getElementById('prevDayText').innerHTML=msg;
+      renderEntryForm();
+      openModal('prevDayModal');
+    } else {
+      renderEntryForm();
+    }
+  }
+}
+
+function prevDayAnswer(){closeModal('prevDayModal');}
+
+// ═══════════════════════════════════════════════════
+//  ENTRY FORM
+// ═══════════════════════════════════════════════════
+let entryExpenses={};
+
+function renderEntryForm(){
+  entryExpenses={};
+  const allData=DB.fin.getAll(currentUser.id);
+  const sortedDays=Object.keys(allData).sort();
+  let lastIncome=0;
+  if(sortedDays.length>0)lastIncome=allData[sortedDays[sortedDays.length-1]]?.income||0;
+  document.getElementById('todayEntryArea').innerHTML=`
+    <div class="entry-section">
+      <div class="section-title">💰 Today's Income</div>
+      <div class="info-banner success" style="margin-bottom:16px;font-size:13px">
+        📌 Enter your income for today. This is used <strong>only for today</strong> — it does not add to previous income.
+        ${lastIncome>0?`<br>Your last recorded income: <strong>${fmtCur(lastIncome)}</strong>`:''}
+      </div>
+      <div class="form-group">
+        <label>Income Amount (₹)</label>
+        <input type="number" id="entry-income" placeholder="e.g. 50000" min="0" oninput="onIncomeInput()"/>
+        <div class="field-error" id="err-income"></div>
+      </div>
+    </div>
+    <div id="expCategoriesArea"></div>
+    <div class="entry-section" id="previewSection" style="display:none">
+      <div class="section-title">📊 Preview</div>
+      <div id="entryPreview"></div>
+    </div>
+    <button class="btn btn-primary" style="max-width:320px" onclick="submitEntry()">✅ Submit Today's Data</button>`;
+}
+
+// ═══════════════════════════════════════════════════
+//  50-30-20 RULE DATA
+// ═══════════════════════════════════════════════════
+// Maps each category to its 50-30-20 bucket and per-category daily budget share
+const CAT_BUCKET = {
+  food:          {bucket:'needs',  share:1/4},
+  transport:     {bucket:'needs',  share:1/4},
+  health:        {bucket:'needs',  share:1/4},
+  bills:         {bucket:'needs',  share:1/4},
+  shopping:      {bucket:'wants',  share:1/4},
+  entertainment: {bucket:'wants',  share:1/4},
+  education:     {bucket:'wants',  share:1/4},
+  others:        {bucket:'wants',  share:1/4},
+};
+// Savings gets 20% — displayed as a special category card
+const BUCKET_PCT = {needs:0.50, wants:0.30, savings:0.20};
+
+function getDailyBudget(catId, income){
+  const daysInMonth=new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate();
+  const cb=CAT_BUCKET[catId];
+  if(!cb)return 0;
+  const bucketMonthly=income*BUCKET_PCT[cb.bucket];
+  const catMonthly=bucketMonthly*cb.share;
+  return catMonthly/daysInMonth;
+}
+
+function onIncomeInput(){
+  const income=parseFloat(document.getElementById('entry-income')?.value)||0;
+  updatePreview();
+  if(!income){
+    document.getElementById('expCategoriesArea').innerHTML='';
+    const ps=document.getElementById('previewSection');
+    if(ps)ps.style.display='none';
+    return;
+  }
+  renderCategoryCards(income);
+  const ps=document.getElementById('previewSection');
+  if(ps)ps.style.display='block';
+}
+
+function renderCategoryCards(income){
+  const daysInMonth=new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate();
+  // Build category cards — all categories shown, each with daily budget
+  const catCards=CATEGORIES.map(cat=>{
+    const dailyBudget=getDailyBudget(cat.id,income);
+    const currentVal=entryExpenses[cat.id]||0;
+    const isOver=currentVal>0&&currentVal>dailyBudget;
+    return `<div class="exp-cat-card${isOver?' over-budget':''}" id="ecc-${cat.id}">
+      <div class="exp-cat-header">
+        <span class="exp-cat-icon">${cat.icon}</span>
+        <span class="exp-cat-name">${cat.label.toUpperCase()}</span>
+      </div>
+      <div class="exp-cat-budget">Budget: ${fmtCur(Math.round(dailyBudget))}/day</div>
+      <input type="number" min="0" placeholder="0"
+        value="${currentVal>0?currentVal:''}"
+        class="exp-cat-input${isOver?' input-over':''}"
+        id="ecinput-${cat.id}"
+        oninput="onCatInput('${cat.id}',${dailyBudget},this.value)"/>
+      <div class="exp-cat-warn" id="ecwarn-${cat.id}" style="display:${isOver?'flex':'none'}">
+        ⚠️ Over daily budget!
+      </div>
+    </div>`;
+  }).join('');
+
+  // Savings card (info only, not an expense input)
+  const savingsMonthly=Math.round(income*BUCKET_PCT.savings);
+  const savingsDaily=Math.round(savingsMonthly/daysInMonth);
+
+  document.getElementById('expCategoriesArea').innerHTML=`
+    <div class="entry-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+        <div class="section-title" style="margin-bottom:0">📝 Today's Expenses</div>
+        <span style="font-size:12px;color:var(--muted)">Daily limits based on 50-30-20 rule for ${fmtCur(income)}</span>
+      </div>
+      <div class="exp-cat-grid">${catCards}</div>
+      <div class="savings-info-card">
+        <span style="font-size:18px">💎</span>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--yellow)">SAVINGS / INVEST (20%)</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">Target: <strong style="color:var(--yellow)">${fmtCur(savingsMonthly)}/month</strong> &nbsp;·&nbsp; ≈ ${fmtCur(savingsDaily)}/day</div>
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div style="font-size:15px;color:var(--muted)">Total Expenses Today</div>
+      </div>
+      <div id="totalExpDisplay" style="font-family:'Syne',sans-serif;font-size:32px;font-weight:800;margin-top:4px;color:var(--text)">₹0</div>
+    </div>`;
+  updateTotalDisplay();
+}
+
+function onCatInput(catId, dailyBudget, rawVal){
+  const val=parseFloat(rawVal)||0;
+  entryExpenses[catId]=val;
+  const card=document.getElementById('ecc-'+catId);
+  const inp=document.getElementById('ecinput-'+catId);
+  const warn=document.getElementById('ecwarn-'+catId);
+  const isOver=val>0&&val>dailyBudget;
+  if(card){ card.classList.toggle('over-budget',isOver); }
+  if(inp){ inp.classList.toggle('input-over',isOver); }
+  if(warn){ warn.style.display=isOver?'flex':'none'; }
+  updateTotalDisplay();
+  updatePreview();
+}
+
+function updateTotalDisplay(){
+  const total=Object.values(entryExpenses).reduce((a,b)=>a+b,0);
+  const el=document.getElementById('totalExpDisplay');
+  if(el)el.textContent='₹'+total.toLocaleString('en-IN');
+}
+
+// Keep old toggleCat stub so nothing breaks if called elsewhere
+function toggleCat(catId){} 
+function renderExpInputs(){}
+
+function updatePreview(){
+  const income=parseFloat(document.getElementById('entry-income')?.value)||0;
+  const totalExp=Object.values(entryExpenses).reduce((a,b)=>a+b,0);
+  const risk=income>0?getRisk(totalExp/income):getRisk(0);
+  const el=document.getElementById('entryPreview');
+  if(!el)return;
+  if(!income&&!totalExp){el.innerHTML='<span style="color:var(--muted)">Add income and expenses above.</span>';return;}
+  const savings=income-totalExp;
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">
+      <div style="background:var(--surface2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Income</div>
+        <div style="font-size:20px;font-weight:700;color:var(--green);font-family:'Syne',sans-serif">${fmtCur(income)}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Expenses</div>
+        <div style="font-size:20px;font-weight:700;color:var(--red);font-family:'Syne',sans-serif">${fmtCur(totalExp)}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Savings</div>
+        <div style="font-size:20px;font-weight:700;color:${savings>=0?'var(--green)':'var(--red)'};font-family:'Syne',sans-serif">${fmtCur(savings)}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Today's Risk</div>
+        <span class="risk-badge risk-${risk.cls}" style="margin-top:4px;display:inline-block;font-size:12px;padding:4px 12px">${risk.label}</span>
+      </div>
+    </div>`;
+}
+
+async function submitEntry(){
+  const income=parseFloat(document.getElementById('entry-income')?.value)||0;
+  if(income<=0){
+    const e=document.getElementById('err-income');
+    e.textContent='Enter a valid income amount.';e.classList.add('show');return;
+  }
+  document.getElementById('err-income').classList.remove('show');
+  const expenses={};
+  for(const [k,v] of Object.entries(entryExpenses)){if(v>0)expenses[k]=v;}
+  const entry={income,expenses,savedAt:new Date().toISOString(),expenseEdited:false};
+  
+  await DB.fin.setDay(currentUser.id, todayStr(), entry);
+  toast("Today's data saved!",'success');
+  renderTodayDone(entry);
+}
+
+// ═══════════════════════════════════════════════════
+//  TODAY DONE VIEW
+// ═══════════════════════════════════════════════════
+async function renderTodayDone(entry){
+  const totalExp=Object.values(entry.expenses||{}).reduce((a,b)=>a+b,0);
+  const savings=entry.income-totalExp;
+  const dayRisk=entry.income>0?getRisk(totalExp/entry.income):getRisk(0);
+  const cum = await getCumRisk(currentUser.id);
+  const catRows=CATEGORIES.filter(c=>entry.expenses[c.id]>0).map(c=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+      <span>${c.icon} ${c.label}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:14px">${fmtCur(entry.expenses[c.id])}</span>
+    </div>`).join('');
+  const canEdit=!entry.expenseEdited;
+  document.getElementById('todayEntryArea').innerHTML=`
+    <div class="info-banner success">✅ Today's entry is recorded.</div>
+    <div class="entry-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+        <div class="section-title" style="margin-bottom:0">📊 Summary — ${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</div>
+        <button class="btn btn-warn" style="width:auto;padding:8px 16px;font-size:13px;margin-top:0" onclick="openEditIncome()">✏️ Edit Income</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:18px">
+        <div class="kpi-card green"><div class="kpi-label">Income</div><div class="kpi-val" style="color:var(--green)">${fmtCur(entry.income)}</div></div>
+        <div class="kpi-card red"><div class="kpi-label">Total Spent</div><div class="kpi-val" style="color:var(--red)">${fmtCur(totalExp)}</div></div>
+        <div class="kpi-card ${savings>=0?'green':'red'}"><div class="kpi-label">Saved</div><div class="kpi-val" style="color:${savings>=0?'var(--green)':'var(--red)'}">${fmtCur(savings)}</div></div>
+      </div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px">
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:5px">TODAY'S RISK</div>
+          <span class="risk-badge risk-${dayRisk.cls}">${dayRisk.label} — ${dayRisk.pct.toFixed(1)}% of today's income</span>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:5px">MONTH-TO-DATE RISK</div>
+          <span class="risk-badge risk-${cum.risk.cls}">${cum.risk.label} — ${(cum.ratio*100).toFixed(1)}% of income</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Category Breakdown</div>
+        ${canEdit
+          ?`<button class="btn btn-warn" style="width:auto;padding:8px 14px;font-size:12px;margin-top:0" onclick="openEditExpenses()">✏️ Edit Expenses <span style="opacity:.6">(once only)</span></button>`
+          :`<span style="font-size:12px;color:var(--muted);background:var(--surface2);padding:5px 12px;border-radius:8px">✓ Expenses edited for today</span>`}
+      </div>
+      ${catRows||'<div style="color:var(--muted);font-size:14px">No expenses recorded today.</div>'}
+    </div>
+    <button class="btn btn-ghost" style="max-width:260px" onclick="finTab('analysis')">→ View Full Analysis</button>
+    <div id="rule503020DoneArea"></div>`;
+  setTimeout(()=>{
+    const area=document.getElementById('rule503020DoneArea');
+    if(!area||!entry.income)return;
+    const income=entry.income;
+    const daysInMonth=new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate();
+    const buckets={
+      needs:{label:'Needs',pct:0.50,icon:'🏠',color:'var(--green)',desc:'Food, Transport, Health, Bills',cats:['food','transport','health','bills'],cls:'needs'},
+      wants:{label:'Wants',pct:0.30,icon:'🎯',color:'var(--accent)',desc:'Shopping, Entertainment, Education, Others',cats:['shopping','entertainment','education','others'],cls:'wants'},
+      savings:{label:'Savings / Invest',pct:0.20,icon:'💎',color:'var(--yellow)',desc:'Save or invest this every month',cats:[],cls:'savings'}
+    };
+    const bucketCards=Object.entries(buckets).map(([,b])=>{
+      const monthly=Math.round(income*b.pct);
+      const daily=Math.round(monthly/daysInMonth);
+      const catRows=b.cats.map(catId=>{
+        const cat=CATEGORIES.find(c=>c.id===catId);if(!cat)return'';
+        const perCat=Math.round(monthly/b.cats.length);
+        const perCatDaily=Math.round(perCat/daysInMonth);
+        return `<div class="rule-cat-row"><span class="rule-cat-name">${cat.icon} ${cat.label}</span><span class="rule-cat-amt" style="color:${b.color}">${fmtCur(perCat)}<span style="color:var(--muted);font-size:10px"> /mo · ${fmtCur(perCatDaily)}/day</span></span></div>`;
+      }).join('');
+      return `<div class="rule-bucket ${b.cls}">
+        <div class="rule-bucket-icon">${b.icon}</div>
+        <div class="rule-bucket-title">${b.label}</div>
+        <div class="rule-bucket-pct">${Math.round(b.pct*100)}% · ${b.desc}</div>
+        <div class="rule-bucket-monthly" style="color:${b.color}">${fmtCur(monthly)}<span style="font-size:12px;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400"> /month</span></div>
+        <div class="rule-bucket-daily">≈ ${fmtCur(daily)} per day</div>
+        ${b.cats.length?`<div class="rule-cats">${catRows}</div>`:''}
+      </div>`;
+    }).join('');
+    area.innerHTML=`<div class="rule-card" style="margin-top:4px">
+      <div class="rule-title">📐 Your 50-30-20 Budget Plan</div>
+      <div class="rule-sub">Based on today's income of <strong>${fmtCur(income)}</strong> — your recommended monthly &amp; daily limits per category.</div>
+      <div class="rule-grid">${bucketCards}</div>
+    </div>`;
+  },50);
+}
+
+// ═══════════════════════════════════════════════════
+//  EDIT INCOME (always allowed)
+// ═══════════════════════════════════════════════════
+async function openEditIncome(){
+  const entry = await DB.fin.getDay(currentUser.id, todayStr());
+  if(!entry)return;
+  document.getElementById('editIncInput').value=entry.income||'';
+  document.getElementById('err-editInc').classList.remove('show');
+  openModal('editIncModal');
+}
+
+async function saveEditedIncome(){
+  const val=parseFloat(document.getElementById('editIncInput').value);
+  if(!val||val<=0){
+    const e=document.getElementById('err-editInc');
+    e.textContent='Enter a valid income.';
+    e.classList.add('show');
+    return;
+  }
+  const entry = await DB.fin.getDay(currentUser.id, todayStr());
+  entry.income=val;
+  await DB.fin.setDay(currentUser.id, todayStr(), entry);
+  closeModal('editIncModal');
+  toast('Income updated!','success');
+  renderTodayDone(entry);
+}
+
+// ═══════════════════════════════════════════════════
+//  EDIT EXPENSES (once per day)
+// ═══════════════════════════════════════════════════
+async function openEditExpenses(){
+  const entry = await DB.fin.getDay(currentUser.id, todayStr());
+  if(!entry||entry.expenseEdited){toast('Expenses already edited today.','warn');return;}
+  const rows=CATEGORIES.map(cat=>`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+      <span style="font-size:18px">${cat.icon}</span>
+      <span style="font-size:13px;font-weight:600;min-width:110px">${cat.label}</span>
+      <input type="number" min="0" placeholder="0" value="${entry.expenses[cat.id]||''}"
+        style="max-width:160px;flex:1" id="ee-${cat.id}"/>
+    </div>`).join('');
+  document.getElementById('editExpBody').innerHTML=`
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Set 0 or leave blank to remove a category.</div>
+    ${rows}`;
+  openModal('editExpModal');
+}
+async function saveEditedExpenses(){
+  const entry = await DB.fin.getDay(currentUser.id, todayStr());
+  if(!entry)return;
+  const newExp={};
+  CATEGORIES.forEach(cat=>{
+    const v=parseFloat(document.getElementById('ee-'+cat.id)?.value)||0;
+    if(v>0)newExp[cat.id]=v;
+  });
+  entry.expenses=newExp;
+  entry.expenseEdited=true;
+  await DB.fin.setDay(currentUser.id, todayStr(), entry);
+  closeModal('editExpModal');
+  toast('Expenses updated!','success');
+  renderTodayDone(entry);
+}
+
+// ═══════════════════════════════════════════════════
+//  RISK LOGIC
+// ═══════════════════════════════════════════════════
+// Income is NEVER added. Latest income = current income.
+// Expenses ARE cumulative (all month's expenses summed).
+// Ratio = sum(monthly expenses) / latest income
+function getRisk(ratio){
+  if(ratio<=0.5)return{cls:'low',label:'Low Risk',color:'#2dffb4',pct:ratio*100};
+  if(ratio<=0.7)return{cls:'med',label:'Medium Risk',color:'#ffd166',pct:ratio*100};
+  if(ratio<=0.9)return{cls:'high',label:'High Risk',color:'#ff9a3c',pct:ratio*100};
+  return{cls:'crit',label:'Critical Risk',color:'#ff4d6d',pct:Math.min(ratio*100,100)};
+}
+
+async function getCumRisk(uid){
+  const allData = await DB.fin.getAll(uid);
+  const now=new Date();
+  const mp=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  let income=0;
+  Object.keys(allData).sort().forEach(d=>{if(allData[d]?.income)income=allData[d].income;});
+  let totalExp=0, dayCount=0;
+  for(const [d,e] of Object.entries(allData)){
+    if(d.startsWith(mp)){
+      totalExp+=Object.values(e.expenses||{}).reduce((a,b)=>a+b,0);
+      dayCount++;
+    }
+  }
+  const ratio=income>0?totalExp/income:0;
+  return{ratio,totalExp,income,dayCount,risk:getRisk(ratio)};
+}
+
+// ═══════════════════════════════════════════════════
+//  STRESS SCORE CALCULATION
+// ═══════════════════════════════════════════════════
+async function calcStressScore(uid) {
+  const allData = await DB.fin.getAll(uid);
+  const now = new Date();
+  const mp = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+  let totalMExp = 0, mExp = {};
+  CATEGORIES.forEach(c => mExp[c.id] = 0);
+  for (const [d, e] of Object.entries(allData)) {
+    if (d.startsWith(mp)) {
+      for (const [k, v] of Object.entries(e.expenses || {})) {
+        mExp[k] = (mExp[k] || 0) + v;
+        totalMExp += v;
+      }
+    }
+  }
+
+  const sortedDays = Object.keys(allData).sort();
+  let income = 0;
+  for (let i = sortedDays.length - 1; i >= 0; i--) {
+    if (allData[sortedDays[i]].income > 0) { income = allData[sortedDays[i]].income; break; }
+  }
+
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  const daysTracked = Object.keys(allData).filter(d => d.startsWith(mp)).length;
+  const daysPassed = now.getDate();
+
+  // F1: Spending Ratio (0-35 pts)
+  const ratio = income > 0 ? totalMExp / income : 0;
+  const f1 = Math.min(ratio * 35, 35);
+
+  // F2: Daily Burn Rate (0-25 pts)
+  const idealDailyBudget = income > 0 ? income / daysInMonth : 0;
+  const actualDailyAvg = daysTracked > 0 ? totalMExp / daysTracked : 0;
+  const burnRatio = idealDailyBudget > 0 ? actualDailyAvg / idealDailyBudget : 0;
+  const f2 = Math.min((burnRatio - 1) * 40, 25);
+
+  // F3: Savings Gap (0-20 pts)
+  const targetSavings = income * 0.20;
+  const actualSavings = income - totalMExp;
+  const savingsGap = targetSavings > 0 ? Math.max(0, (targetSavings - actualSavings) / targetSavings) : 0;
+  const f3 = savingsGap * 20;
+
+  // F4: Needs Overspend (0-15 pts)
+  const needsCats = ['food','transport','health','bills'];
+  const needsTotal = needsCats.reduce((s, c) => s + (mExp[c] || 0), 0);
+  const needsRatio = income > 0 ? needsTotal / income : 0;
+  const f4 = Math.min(Math.max(0, needsRatio - 0.5) * 75, 15);
+
+  // F5: Tracking Gap (0-5 pts) — from registration date
+  const regDate = new Date(currentUser.joinedAt || currentUser.joined_at ||
+    `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`);
+  const regDateStr = regDate.toISOString().slice(0,10);
+  let daysAvailable = 0;
+  const tempD = new Date(regDate);
+  while (tempD.toISOString().slice(0,10) <= todayStr()) {
+    daysAvailable++;
+    tempD.setDate(tempD.getDate() + 1);
+  }
+  const daysTrackedSinceReg = Object.keys(allData)
+    .filter(d => d.startsWith(mp) && d >= regDateStr).length;
+  const trackingPct = daysAvailable > 0 ? daysTrackedSinceReg / daysAvailable : 1;
+  const f5 = (1 - trackingPct) * 5;
+
+  const rawScore = f1 + Math.max(0, f2) + f3 + f4 + f5;
+  const score = Math.round(Math.min(100, Math.max(0, rawScore)));
+
+  let level, color, emoji, advice;
+  if (score <= 20) {
+    level='Very Low'; color='var(--green)'; emoji='😌';
+    advice='Excellent financial health! You\'re spending well within your means and saving consistently.';
+  } else if (score <= 40) {
+    level='Low'; color='#3cb9ff'; emoji='🙂';
+    advice='Good control over finances. Minor optimizations can push your savings even higher.';
+  } else if (score <= 60) {
+    level='Moderate'; color='var(--yellow)'; emoji='😐';
+    advice='Your spending is noticeable but manageable. Watch your daily burn rate and reduce wants.';
+  } else if (score <= 80) {
+    level='High'; color='var(--orange)'; emoji='😟';
+    advice='Financial stress is building. You\'re outpacing your ideal budget — cut discretionary spend now.';
+  } else {
+    level='Critical'; color='var(--red)'; emoji='🚨';
+    advice='Critical zone! Expenses are severely straining your income. Immediate action needed.';
+  }
+
+  return { score, level, color, emoji, advice,
+    factors: {
+      spendingRatio: { val:(ratio*100).toFixed(1)+'%', pts:Math.round(f1), max:35, label:'Spending Ratio', desc:'MTD spend vs income' },
+      burnRate:      { val:burnRatio.toFixed(2)+'×', pts:Math.round(Math.max(0,f2)), max:25, label:'Daily Burn Rate', desc:'Actual vs ideal daily spend' },
+      savingsGap:    { val:(savingsGap*100).toFixed(1)+'%', pts:Math.round(f3), max:20, label:'Savings Gap', desc:'Shortfall from 20% savings goal' },
+      needsOverspend:{ val:(needsRatio*100).toFixed(1)+'%', pts:Math.round(f4), max:15, label:'Needs Overspend', desc:'Essential categories vs income' },
+      consistency:   { val:(trackingPct*100).toFixed(0)+'%', pts:Math.round(f5), max:5, label:'Tracking Gap', desc:'Days tracked vs days elapsed' }
+    }
+  };
+}
+
+async function renderStressCard(uid) {
+  const el = document.getElementById('stressCard');
+  if (!el) return;
+  const s = await calcStressScore(uid);
+  const factorHTML = Object.values(s.factors).map(f => `
+    <div class="stress-factor">
+      <div class="stress-factor-label">${f.label}</div>
+      <div class="stress-factor-val" style="color:${s.color}">${f.val}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">${f.desc}</div>
+      <div class="stress-factor-bar">
+        <div class="stress-factor-bar-fill" style="width:${Math.min(100,(f.pts/f.max)*100)}%;background:${s.color}"></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">${f.pts} / ${f.max} pts</div>
+    </div>`).join('');
+
+  el.innerHTML = `
+    <div class="stress-title">🧠 Financial Stress Score</div>
+    <div class="stress-sub">A composite score (0–100) based on your spending ratio, burn rate, savings gap, essential overspend, and tracking consistency. Lower is better.</div>
+    <div style="display:flex;align-items:flex-end;gap:16px;margin-bottom:14px;flex-wrap:wrap">
+      <div class="stress-score-num" style="color:${s.color}">${s.score}</div>
+      <div>
+        <div style="font-size:22px">${s.emoji}</div>
+        <span class="risk-badge"
+          style="margin-top:4px;display:inline-block;border-color:${s.color};color:${s.color};background:${s.color}18">
+          ${s.level} Stress
+        </span>
+      </div>
+    </div>
+    <div class="stress-meter-wrap">
+      <div class="stress-meter-fill" style="width:${s.score}%;background:linear-gradient(90deg,var(--green),${s.color})"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:14px">
+      <span>0 — Stress-free</span><span>50 — Moderate</span><span>100 — Critical</span>
+    </div>
+    <div class="info-banner ${s.score<=40?'success':s.score<=60?'':s.score<=80?'':'danger'}" style="margin-bottom:16px">
+      ${s.advice}
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Score Breakdown</div>
+    <div class="stress-factors">${factorHTML}</div>`;
+}
+// ═══════════════════════════════════════════════════
+//  ANALYSIS
+// ═══════════════════════════════════════════════════
+let chartDaily=null,chartCat=null,chartCatDaily=null;
+function destroyCharts(){[chartDaily,chartCat,chartCatDaily].forEach(c=>{if(c)try{c.destroy();}catch(e){}});chartDaily=chartCat=chartCatDaily=null;}
+
+async function renderAnalysis(){
+  const uid=currentUser.id;
+  const allData = await DB.fin.getAll(uid);
+  const now=new Date();
+  const mp=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const cum = await getCumRisk(uid);
+  let mExp={};CATEGORIES.forEach(c=>mExp[c.id]=0);
+  for(const [d,e] of Object.entries(allData)){
+    if(d.startsWith(mp))for(const [k,v] of Object.entries(e.expenses||{}))mExp[k]=(mExp[k]||0)+v;
+  }
+  const totalMExp=Object.values(mExp).reduce((a,b)=>a+b,0);
+  const todayE = allData[todayStr()] || null;
+  const todayExp=Object.values(todayE?.expenses||{}).reduce((a,b)=>a+b,0);
+
+  document.getElementById('kpiGrid').innerHTML=`
+    <div class="kpi-card green"><div class="kpi-label">Current Income</div><div class="kpi-val" style="color:var(--green)">${fmtCur(cum.income)}</div><div class="kpi-sub">Latest recorded</div></div>
+    <div class="kpi-card red"><div class="kpi-label">Month-to-Date Expenses</div><div class="kpi-val" style="color:var(--red)">${fmtCur(totalMExp)}</div><div class="kpi-sub">${cum.dayCount} days tracked</div></div>
+    <div class="kpi-card ${cum.income-totalMExp>=0?'green':'red'}"><div class="kpi-label">Remaining Budget</div><div class="kpi-val" style="color:${cum.income-totalMExp>=0?'var(--green)':'var(--red)'}">${fmtCur(cum.income-totalMExp)}</div><div class="kpi-sub">Income minus MTD spend</div></div>
+    <div class="kpi-card yellow"><div class="kpi-label">Today's Spending</div><div class="kpi-val" style="color:var(--yellow)">${fmtCur(todayExp)}</div><div class="kpi-sub">${todayE?'Recorded':'Not entered'}</div></div>`;
+
+  document.getElementById('riskCard').innerHTML=`
+    <div class="risk-title">📊 Cumulative Risk — Month to Date</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px">All expenses this month are summed. Income used = your latest recorded income (not added daily).</div>
+    <div class="risk-bar-track"><div class="risk-bar-fill" style="width:${Math.min(cum.ratio*100,100)}%;background:${cum.risk.color}"></div></div>
+    <div class="risk-labels"><span>0%</span><span>50% — safe zone</span><span>100%+</span></div>
+    <span class="risk-badge risk-${cum.risk.cls}" style="margin-top:10px;display:inline-block">${cum.risk.label} — ${(cum.ratio*100).toFixed(1)}% of income spent</span>
+    <div style="font-size:13px;color:var(--muted);margin-top:10px">Spent: ${fmtCur(totalMExp)} / Income: ${fmtCur(cum.income)}</div>`;
+
+  setTimeout(()=>{
+    destroyCharts();
+    buildDailyChart(allData);
+    buildCatChart(mExp,totalMExp);
+    buildCatDailyChart(allData,mp);
+  },50);
+  renderSuggestions(mExp,totalMExp,cum.income,cum);
+  renderStressCard(uid);
+}
+
+function buildDailyChart(allData){
+  const ctx=document.getElementById('chartDaily');if(!ctx)return;
+  const days=[],vals=[];
+  const now=new Date();
+  for(let i=13;i>=0;i--){
+    const d=new Date(now);d.setDate(d.getDate()-i);
+    const ds=dateStrOf(d);
+    vals.push(Object.values(allData[ds]?.expenses||{}).reduce((a,b)=>a+b,0));
+    days.push(d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'}));
+  }
+  chartDaily=new Chart(ctx,{type:'bar',
+    data:{labels:days,datasets:[{label:'Daily Spending',data:vals,backgroundColor:'rgba(124,92,252,.6)',borderColor:'#7c5cfc',borderRadius:6,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'₹'+c.raw.toLocaleString('en-IN')}}},
+    scales:{x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#8880aa',font:{size:11}}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#8880aa',callback:v=>'₹'+v.toLocaleString('en-IN')}}}}});
+}
+
+function buildCatChart(mExp,total){
+  const ctx=document.getElementById('chartCat');if(!ctx)return;
+  const active=CATEGORIES.filter(c=>mExp[c.id]>0);
+  if(!active.length){chartCat=new Chart(ctx,{type:'doughnut',data:{labels:['No data'],datasets:[{data:[1],backgroundColor:['rgba(136,128,170,.3)']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8880aa'}}}}});return;}
+  const colors=['#7c5cfc','#e05cfc','#2dffb4','#ffd166','#ff4d6d','#ff9a3c','#3cb9ff','#b0ff4d'];
+  chartCat=new Chart(ctx,{type:'doughnut',
+    data:{labels:active.map(c=>c.label),datasets:[{data:active.map(c=>mExp[c.id]),backgroundColor:colors.slice(0,active.length),borderWidth:0,hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{labels:{color:'#8880aa',font:{size:12}}},tooltip:{callbacks:{label:c=>`${c.label}: ₹${c.raw.toLocaleString('en-IN')} (${total>0?((c.raw/total)*100).toFixed(1):0}%)`}}}}});
+}
+
+function buildCatDailyChart(allData,mp){
+  const ctx=document.getElementById('chartCatDaily');if(!ctx)return;
+  const days=Object.keys(allData).filter(d=>d.startsWith(mp)).sort();
+  if(!days.length)return;
+  const colors=['#7c5cfc','#e05cfc','#2dffb4','#ffd166','#ff4d6d','#ff9a3c','#3cb9ff','#b0ff4d'];
+  const datasets=CATEGORIES.map((cat,ci)=>({
+    label:cat.label,data:days.map(d=>allData[d]?.expenses?.[cat.id]||0),
+    backgroundColor:colors[ci%colors.length]+'99',borderColor:colors[ci%colors.length],borderWidth:1,borderRadius:4,stack:'stack'
+  })).filter(ds=>ds.data.some(v=>v>0));
+  chartCatDaily=new Chart(ctx,{type:'bar',
+    data:{labels:days.map(d=>new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short'})),datasets},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8880aa',font:{size:11}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ₹${c.raw.toLocaleString('en-IN')}`}}},
+    scales:{x:{stacked:true,grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#8880aa',font:{size:10}}},y:{stacked:true,grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#8880aa',callback:v=>'₹'+v.toLocaleString('en-IN')}}}}});
+}
+
+function renderSuggestions(mExp,totalMExp,income,cum){
+  const el=document.getElementById('suggestionList');if(!el)return;
+  const tips=[];const ratio=cum.ratio;const days=cum.dayCount||1;const avg=totalMExp/days;
+  const top=CATEGORIES.reduce((b,c)=>mExp[c.id]>(mExp[b.id]||0)?c:b,CATEGORIES[0]);
+  if(ratio>0.9)tips.push(`🔴 You've used <strong>${(ratio*100).toFixed(1)}%</strong> of your income this month — critical territory. Freeze all non-essential spending immediately.`);
+  else if(ratio>0.7)tips.push(`🟡 You're at <strong>${(ratio*100).toFixed(1)}%</strong> — above the safe 70% threshold. Tighten spending for the rest of the month.`);
+  else tips.push(`🟢 You're at <strong>${(ratio*100).toFixed(1)}%</strong> — healthy zone. You're on track!`);
+  if(mExp[top.id]>0)tips.push(`📊 Biggest category: <strong>${top.icon} ${top.label}</strong> at ${fmtCur(mExp[top.id])} (${totalMExp>0?((mExp[top.id]/totalMExp)*100).toFixed(0):0}% of spending). Is it all necessary?`);
+  if(avg>0){const proj=avg*30;if(proj>income)tips.push(`📈 At ${fmtCur(Math.round(avg))}/day average, projected monthly total: <strong>${fmtCur(Math.round(proj))}</strong> — <strong>${fmtCur(Math.round(proj-income))} over your income</strong>.`);
+  else tips.push(`💡 At your current pace you're projected to save <strong>${fmtCur(Math.round(income-proj))}</strong> this month. Consider a recurring deposit for the surplus.`);}
+  if(mExp.food>0&&income>0&&(mExp.food/income)>0.25)tips.push(`🍔 Food is consuming <strong>${((mExp.food/income)*100).toFixed(0)}%</strong> of income. Cooking at home even 3 days/week could save ₹3,000–5,000/month.`);
+  if(mExp.entertainment>0&&income>0&&(mExp.entertainment/income)>0.1)tips.push(`🎬 Entertainment is at <strong>${((mExp.entertainment/income)*100).toFixed(0)}%</strong> of income. Try capping it at 10% with a monthly budget.`);
+  if(mExp.shopping>0)tips.push(`🛍️ Shopping this month: ${fmtCur(mExp.shopping)}. Apply the 48-hour rule — wait 2 days before any non-essential purchase.`);
+  el.innerHTML=tips.map(s=>`<div class="suggestion-item">${s}</div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════
+//  CALENDAR — read-only, shows risk per day
+// ═══════════════════════════════════════════════════
+async function renderCalendar(){
+  const allData = await DB.fin.getAll(currentUser.id);
+  const fd=new Date(calYear,calMonth,1).getDay();
+  const dim=new Date(calYear,calMonth+1,0).getDate();
+  const today=todayStr();
+  const mNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  document.getElementById('calTitle').textContent=`${mNames[calMonth]} ${calYear}`;
+  let html=dNames.map(d=>`<div class="cal-day-header">${d}</div>`).join('');
+  for(let i=0;i<fd;i++)html+=`<div class="cal-day other-month"></div>`;
+  for(let d=1;d<=dim;d++){
+    const ds=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const entry=allData[ds];
+    const isToday=ds===today;
+    const totalExp=entry?Object.values(entry.expenses||{}).reduce((a,b)=>a+b,0):0;
+    let riskBadge='';
+    if(entry&&entry.income>0){
+      const r=getRisk(totalExp/entry.income);
+      riskBadge=`<div class="cal-day-risk" style="background:${r.color}22;color:${r.color};border:1px solid ${r.color}44">${r.label.replace(' Risk','')}</div>`;
+    }
+    html+=`<div class="cal-day${isToday?' today':''}${entry?' has-data':''}"
+      onclick="${entry?`showCalDay('${ds}')`:''}"
+      title="${entry?'Click to view':'No data'}">
+      <div class="cal-day-num">${d}</div>
+      ${entry?`<div class="cal-day-total">${fmtCur(totalExp)}</div>${riskBadge}`:''}
+    </div>`;
+  }
+  document.getElementById('calGrid').innerHTML=html;
+}
+
+function calNav(dir){
+  calMonth+=dir;
+  if(calMonth>11){calMonth=0;calYear++;}
+  if(calMonth<0){calMonth=11;calYear--;}
+  renderCalendar();
+}
+
+function showCalDay(ds){
+  const entry=DB.fin.getAll(currentUser.id)[ds];if(!entry)return;
+  const d=new Date(ds+' 00:00:00');
+  document.getElementById('calDetailTitle').textContent=`📅 ${d.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}`;
+  const totalExp=Object.values(entry.expenses||{}).reduce((a,b)=>a+b,0);
+  const savings=entry.income-totalExp;
+  const dayRisk=entry.income>0?getRisk(totalExp/entry.income):getRisk(0);
+  const stressMsg={low:'😊 Low Stress — spending is well within control.',med:'😐 Moderate Stress — spending is noticeable, watch it.',high:'😰 High Stress — heavy spending this day.',crit:'🚨 Critical — expenses nearly exceeded income!'};
+  const catRows=CATEGORIES.filter(c=>entry.expenses[c.id]>0).map(c=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:14px">${c.icon} ${c.label}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:13px">${fmtCur(entry.expenses[c.id])}</span>
+    </div>`).join('');
+  document.getElementById('calDetailBody').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+      <div style="background:var(--surface2);border-radius:10px;padding:12px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Income</div><div style="font-size:17px;font-weight:700;color:var(--green)">${fmtCur(entry.income)}</div></div>
+      <div style="background:var(--surface2);border-radius:10px;padding:12px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Spent</div><div style="font-size:17px;font-weight:700;color:var(--red)">${fmtCur(totalExp)}</div></div>
+      <div style="background:var(--surface2);border-radius:10px;padding:12px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Saved</div><div style="font-size:17px;font-weight:700;color:${savings>=0?'var(--green)':'var(--red)'}">${fmtCur(savings)}</div></div>
+    </div>
+    <div style="margin-bottom:10px"><span class="risk-badge risk-${dayRisk.cls}">Risk: ${dayRisk.label} — ${dayRisk.pct.toFixed(1)}%</span></div>
+    <div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:14px;font-size:13px;line-height:1.6">${stressMsg[dayRisk.cls]}</div>
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Expense Breakdown</div>
+    ${catRows||'<div style="color:var(--muted);font-size:14px">No expenses recorded.</div>'}
+    <div style="font-size:11px;color:var(--muted);margin-top:14px">📌 Read-only. Past entries cannot be edited.</div>`;
+  openModal('calDetailModal');
+}
+
+// ═══════════════════════════════════════════════════
+//  MONTHLY REPORT
+// ═══════════════════════════════════════════════════
+async function renderMonthly(){
+  const allData = await DB.fin.getAll(currentUser.id);
+  const now=new Date();
+  const mp=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const mNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  let mExp={},totalMExp=0,income=0,dayCount=0;
+  CATEGORIES.forEach(c=>mExp[c.id]=0);
+  Object.keys(allData).sort().forEach(d=>{if(allData[d]?.income)income=allData[d].income;});
+  for(const [d,e] of Object.entries(allData)){
+    if(d.startsWith(mp)){
+      for(const [k,v] of Object.entries(e.expenses||{})){mExp[k]=(mExp[k]||0)+v;totalMExp+=v;}
+      dayCount++;
+    }
+  }
+  const savings=income-totalMExp;const ratio=income>0?totalMExp/income:0;const risk=getRisk(ratio);
+  const flagged=CATEGORIES.filter(c=>mExp[c.id]>0&&totalMExp>0&&(mExp[c.id]/totalMExp)>0.2);
+  const whatIfs=[];
+  flagged.forEach(cat=>{
+    const nt=totalMExp-(mExp[cat.id]*0.2);const nr=getRisk(income>0?nt/income:0);
+    whatIfs.push(`What if you spent <strong>20% less on ${cat.icon} ${cat.label}</strong> (save ${fmtCur(Math.round(mExp[cat.id]*0.2))})? Risk becomes <span class="risk-badge risk-${nr.cls}" style="font-size:11px;padding:3px 10px">${nr.label}</span>`);
+  });
+  if(totalMExp>0){const nt=totalMExp*0.9;const nr=getRisk(income>0?nt/income:0);whatIfs.push(`What if you cut <strong>all spending by 10%</strong>? Total: ${fmtCur(Math.round(nt))} — risk: <span class="risk-badge risk-${nr.cls}" style="font-size:11px;padding:3px 10px">${nr.label}</span>`);}
+  const catCards=CATEGORIES.filter(c=>mExp[c.id]>0).map(c=>{
+    const pct=totalMExp>0?((mExp[c.id]/totalMExp)*100).toFixed(0):0;
+    return `<div class="cat-item">
+      <div class="cat-item-header"><span class="cat-item-name">${c.icon} ${c.label}</span><span class="cat-item-amt">${fmtCur(mExp[c.id])}</span></div>
+      <div class="cat-mini-bar"><div class="cat-mini-fill" style="width:${pct}%"></div></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:5px">${pct}% of spending${income>0?` · ${((mExp[c.id]/income)*100).toFixed(0)}% of income`:''}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('monthlyReport').innerHTML=`
+    <div class="section-card">
+      <div class="section-title">📋 ${mNames[now.getMonth()]} ${now.getFullYear()} — Report</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-bottom:20px">
+        <div class="kpi-card green"><div class="kpi-label">Income</div><div class="kpi-val" style="color:var(--green)">${fmtCur(income)}</div></div>
+        <div class="kpi-card red"><div class="kpi-label">Total Expenses</div><div class="kpi-val" style="color:var(--red)">${fmtCur(totalMExp)}</div></div>
+        <div class="kpi-card ${savings>=0?'green':'red'}"><div class="kpi-label">Net Savings</div><div class="kpi-val" style="color:${savings>=0?'var(--green)':'var(--red)'}">${fmtCur(savings)}</div></div>
+        <div class="kpi-card accent"><div class="kpi-label">Days Tracked</div><div class="kpi-val" style="color:var(--accent)">${dayCount}</div></div>
+      </div>
+      <div class="risk-bar-track" style="margin-bottom:8px"><div class="risk-bar-fill" style="width:${Math.min(ratio*100,100)}%;background:${risk.color}"></div></div>
+      <div class="risk-labels"><span>0%</span><span>Safe ≤50%</span><span>100%</span></div>
+      <span class="risk-badge risk-${risk.cls}" style="margin-top:10px;display:inline-block">${risk.label} — ${(ratio*100).toFixed(1)}% of income spent</span>
+    </div>
+    ${flagged.length?`<div class="section-card"><div class="section-title">🚩 High-Spend Categories (&gt;20% of total)</div><div class="monthly-flags">
+      ${flagged.map(c=>`<div class="flag-item"><div class="flag-dot" style="background:var(--red)"></div>
+        <div class="flag-text"><strong>${c.icon} ${c.label}</strong> — ${fmtCur(mExp[c.id])} (${((mExp[c.id]/totalMExp)*100).toFixed(0)}% of spending${income>0?`, ${((mExp[c.id]/income)*100).toFixed(0)}% of income`:''})</div>
+      </div>`).join('')}
+    </div></div>`:''}
+    ${catCards?`<div class="section-card"><div class="section-title">📦 Category Breakdown</div><div class="cat-breakdown">${catCards}</div></div>`:''}
+    ${whatIfs.length?`<div class="section-card"><div class="section-title">🤔 What-If Scenarios</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px">See how small changes affect your risk:</div>
+      <div class="suggestion-list">${whatIfs.map(w=>`<div class="suggestion-item">${w}</div>`).join('')}</div>
+    </div>`:''}
+    ${!dayCount?`<div class="empty-state"><div class="icon">📊</div><div>No data for this month yet.</div></div>`:''}`;
+}
+//═══════════════════════════════════════════════════
+//  FIN TAB NAV
+// ═══════════════════════════════════════════════════
+async function finTab(t){
+  const tabs=['today','analysis','calendar','monthly','profile'];
+  if(t==='monthly'){
+    const allData = await DB.fin.getAll(currentUser.id);
+    const now=new Date();
+    const mp=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const monthDayCount=Object.keys(allData).filter(d=>d.startsWith(mp)).length;
+    if(monthDayCount<28){
+      const remaining=28-monthDayCount;
+      document.querySelectorAll('.fin-tab').forEach((el,i)=>el.classList.toggle('active',tabs[i]===t));
+      document.querySelectorAll('.fin-tab-panel').forEach(el=>el.classList.remove('active'));
+      document.getElementById('ftp-monthly').classList.add('active');
+      document.getElementById('monthlyReport').innerHTML=`
+        <div class="section-card" style="text-align:center;padding:48px 28px">
+          <div style="font-size:48px;margin-bottom:16px">🔒</div>
+          <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:10px">Monthly Report Locked</div>
+          <div style="color:var(--muted);font-size:14px;line-height:1.7;max-width:420px;margin:0 auto">
+            The full monthly report and graphs are available after <strong style="color:var(--text)">28 days</strong> of data in the current month.<br><br>
+            You have tracked <strong style="color:var(--accent)">${monthDayCount} day${monthDayCount===1?'':'s'}</strong> so far this month.<br>
+            <strong style="color:var(--yellow)">${remaining} more day${remaining===1?'':'s'}</strong> until the report unlocks.
+          </div>
+          <div style="margin-top:24px">
+            <div style="height:8px;border-radius:4px;background:var(--surface2);overflow:hidden;max-width:300px;margin:0 auto">
+              <div style="height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent2));width:${Math.round((monthDayCount/28)*100)}%;transition:width .5s"></div>
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-top:8px">${monthDayCount} / 28 days tracked</div>
+          </div>
+        </div>`;
+      return;
+    }
+  }
+  document.querySelectorAll('.fin-tab').forEach((el,i)=>el.classList.toggle('active',tabs[i]===t));
+  document.querySelectorAll('.fin-tab-panel').forEach(el=>el.classList.remove('active'));
+  document.getElementById('ftp-'+t).classList.add('active');
+  if(t==='analysis') await renderAnalysis();
+  if(t==='calendar') await renderCalendar();
+  if(t==='monthly') await renderMonthly();
+}
+
+// ═══════════════════════════════════════════════════
+//  USER PASSWORD CHANGE
+// ═══════════════════════════════════════════════════
+function userChangePwd(){
+  const cur=document.getElementById('cp-cur').value;
+  const newp=document.getElementById('cp-new').value;
+  const conf=document.getElementById('cp-conf').value;
+  const s=DB.session.get();
+  const e1=document.getElementById('err-cp-cur'),e2=document.getElementById('err-cp-new'),e3=document.getElementById('err-cp-conf');
+  [e1,e2,e3].forEach(e=>e.classList.remove('show'));
+  if(cur!==s.password){e1.textContent='Current password incorrect.';e1.classList.add('show');return;}
+  if(newp.length<6){e2.textContent='Min 6 characters.';e2.classList.add('show');return;}
+  if(newp!==conf){e3.textContent='Passwords do not match.';e3.classList.add('show');return;}
+  const users=DB.users.get();const i=users.findIndex(u=>u.id===s.id);
+  if(i>-1){users[i].password=newp;DB.users.set(users);DB.session.set(users[i]);currentUser=users[i];}
+  toast('Password updated!','success');
+  ['cp-cur','cp-new','cp-conf'].forEach(id=>document.getElementById(id).value='');
+}
+
+// ═══════════════════════════════════════════════════
+//  ADMIN
+// ═══════════════════════════════════════════════════
+let adminSession=null,allUsersCache=[],resetTarget=null,deleteTarget=null;
+
+async function renderAdmin(u){
+  adminSession=u;
+  document.getElementById('ad-name-badge').textContent=u.name.split(' ')[0];
+  
+  const users = await DB.users.get();
+  const pend = await DB.pending.get();
+  allUsersCache=users;
+  
+  const today=new Date().toDateString();
+  const admins=users.filter(x=>x.role==='admin');
+  
+  document.getElementById('stat-total').textContent=users.length;
+  document.getElementById('stat-users').textContent=users.filter(x=>x.role==='user').length;
+  document.getElementById('stat-admins').textContent=admins.length;
+  document.getElementById('stat-today').textContent=users.filter(x=>new Date(x.joined_at).toDateString()===today).length;
+  document.getElementById('stat-pending').textContent=pend.length;
+  
+  const pb=document.getElementById('pbadge');
+  if(pend.length){pb.style.display='inline';pb.textContent=pend.length;}else pb.style.display='none';
+  
+  renderUserTable(users.filter(x=>x.role==='user'));
+  renderAdminTable(admins);
+  renderPending(pend);
+  
+  document.getElementById('adminBar').style.width=`${(admins.length/ADMIN_MAX)*100}%`;
+  document.getElementById('adminBarLabel').textContent=`${admins.length} / ${ADMIN_MAX} slots used`;
+}
+
+function renderUserTable(users){
+  const tb=document.getElementById('userTbody'),em=document.getElementById('userEmpty');
+  if(!users.length){tb.innerHTML='';em.style.display='block';return;}
+  em.style.display='none';
+  tb.innerHTML=users.map(u=>`<tr>
+    <td><span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--green)">${u.id}</span></td>
+    <td><strong>${esc(u.name)}</strong></td>
+    <td style="color:var(--muted)">${esc(u.email)}</td>
+    <td>+91 ${esc(u.phone)}</td>
+    <td style="color:var(--muted);font-size:13px">${fmt(u.joined_at || u.joinedAt)}</td>
+    <td><span class="status-dot"></span>Active</td>
+    <td><button class="btn-sm btn-reject" onclick="promptDeleteUser('${u.id}','${esc(u.name)}')">🗑 Remove</button></td>
+  </tr>`).join('');
+}
+
+function promptDeleteUser(id,name){
+  deleteTarget=id;
+  document.getElementById('deleteUserSub').innerHTML=`Remove <strong>${name}</strong>? This deletes their account and all finance data permanently.`;
+  openModal('deleteUserModal');
+}
+async function confirmDeleteUser(){
+  if(!deleteTarget)return;
+  const users = await DB.users.get();
+  const u = users.find(x=>x.id===deleteTarget);
+  
+  const result = await apiFetch(`${API}/users/${deleteTarget}`, {
+    method: 'DELETE'
+  });
+  
+  if(!result.success){ toast('Failed to delete user.','error'); return; }
+  
+  closeModal('deleteUserModal');
+  toast(`${u?u.name:'User'} removed.`,'info');
+  renderAdmin(adminSession);
+}
+
+function renderAdminTable(admins){
+  const tb=document.getElementById('adminTbody'),em=document.getElementById('adminEmpty');
+  if(!admins.length){tb.innerHTML='';em.style.display='block';return;}
+  em.style.display='none';
+  tb.innerHTML=admins.map(u=>`<tr>
+    <td><span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent2)">${u.id}</span></td>
+    <td><strong>${esc(u.name)}</strong></td>
+    <td style="color:var(--muted)">${esc(u.email)}</td>
+    <td>+91 ${esc(u.phone)}</td>
+    <td style="color:var(--muted);font-size:13px">${fmt(u.joined_at || u.joinedAt)}</td>
+    <td>${u.id!==adminSession.id?`<button class="btn-sm btn-reject" onclick="openResetAdmin('${u.id}','${esc(u.name)}')">Reset Pwd</button>`:`<span style="font-size:12px;color:var(--muted)">You</span>`}</td>
+  </tr>`).join('');
+}
+
+function renderPending(pend){
+  const el=document.getElementById('pendingList');
+  if(!pend.length){el.innerHTML=`<div class="empty-state"><div class="icon">✅</div><div>No pending requests.</div></div>`;return;}
+  el.innerHTML=pend.map(p=>`<div class="req-card">
+    <div><div class="req-name">${esc(p.name)}</div>
+      <div class="req-meta">${p.id} · ${esc(p.email)} · +91 ${esc(p.phone)}</div>
+      <div class="req-meta" style="margin-top:3px">Requested: ${fmt(p.requested_at || p.requestedAt)}</div>
+    </div>
+    <div class="req-actions">
+      <button class="btn-sm btn-approve" onclick="approveAdmin('${p.id}')">✓ Approve</button>
+      <button class="btn-sm btn-reject" onclick="rejectAdmin('${p.id}')">✕ Reject</button>
+    </div>
+  </div>`).join('');
+}
+
+function filterUsers(q){
+  const lq=q.toLowerCase();
+  renderUserTable(allUsersCache.filter(u=>u.role==='user'&&(u.name.toLowerCase().includes(lq)||u.email.toLowerCase().includes(lq)||u.id.toLowerCase().includes(lq)||u.phone.includes(lq))));
+}
+
+async function approveAdmin(id){
+  const users = await DB.users.get();
+  if(users.filter(u=>u.role==='admin').length>=ADMIN_MAX){
+    toast('Admin slots full!','error'); return;
+  }
+  
+  const result = await apiFetch(`${API}/pending/approve/${id}`, {
+    method: 'POST'
+  });
+  
+  if(!result.success){ toast('Failed to approve admin.','error'); return; }
+  
+  toast('Admin approved!','success');
+  renderAdmin(adminSession);
+}
+
+async function rejectAdmin(id){
+  const result = await apiFetch(`${API}/pending/${id}`, {
+    method: 'DELETE'
+  });
+  if(!result.success){ toast('Failed to reject.','error'); return; }
+  toast('Request rejected.','info');
+  renderAdmin(adminSession);
+}
+
+function aTab(t){
+  const tabs=['users','admins','pending','settings'];
+  document.querySelectorAll('.admin-tab').forEach((el,i)=>el.classList.toggle('active',tabs[i]===t));
+  document.querySelectorAll('.admin-tab-panel').forEach(el=>el.classList.remove('active'));
+  document.getElementById('atp-'+t).classList.add('active');
+}
+
+function adminChangePwd(){
+  const cur=document.getElementById('acp-cur').value;
+  const newp=document.getElementById('acp-new').value;
+  const conf=document.getElementById('acp-conf').value;
+  const e1=document.getElementById('err-acp-cur'),e2=document.getElementById('err-acp-new'),e3=document.getElementById('err-acp-conf');
+  [e1,e2,e3].forEach(e=>e.classList.remove('show'));
+  if(cur!==adminSession.password){e1.textContent='Incorrect.';e1.classList.add('show');return;}
+  if(newp.length<6){e2.textContent='Min 6 characters.';e2.classList.add('show');return;}
+  if(newp!==conf){e3.textContent='Passwords do not match.';e3.classList.add('show');return;}
+  const users=DB.users.get();const i=users.findIndex(u=>u.id===adminSession.id);
+  if(i>-1){users[i].password=newp;DB.users.set(users);adminSession=users[i];DB.session.set(users[i]);}
+  toast('Password updated!','success');
+  ['acp-cur','acp-new','acp-conf'].forEach(id=>document.getElementById(id).value='');
+}
+
+function openResetAdmin(id,name){
+  resetTarget=id;
+  document.getElementById('raSub').textContent=`Set a new password for ${name}.`;
+  document.getElementById('ra-pwd').value='';
+  document.getElementById('err-ra-pwd').classList.remove('show');
+  openModal('raModal');
+}
+function doResetAdminPwd(){
+  const pwd=document.getElementById('ra-pwd').value;
+  const err=document.getElementById('err-ra-pwd');
+  if(pwd.length<6){err.textContent='Min 6 characters.';err.classList.add('show');return;}
+  const users=DB.users.get();const i=users.findIndex(u=>u.id===resetTarget);
+  if(i>-1){users[i].password=pwd;DB.users.set(users);}
+  toast('Admin password reset!','success');closeModal('raModal');
+}
+
+let rcVisible=false;
+function toggleRC(){rcVisible=!rcVisible;document.getElementById('rcDisplay').textContent=rcVisible?DB.recovery.get():'••••••••••••';}
+function regenRC(){
+  if(!confirm('Regenerate recovery code? Old one becomes invalid.'))return;
+  const c='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code='NEXREG-';for(let i=0;i<6;i++)code+=c[Math.floor(Math.random()*c.length)];
+  DB.recovery.set(code);rcVisible=true;document.getElementById('rcDisplay').textContent=code;
+  toast('New recovery code generated!','warn');
+}
+
+// ═══════════════════════════════════════════════════
+//  INIT — runs on page load
+// ═══════════════════════════════════════════════════
+(async function init(){
+  const s = DB.session.get();
+  if(s){
+    const users = await DB.users.get();
+    const live = users.find(u=>u.id===s.id);
+    if(live){ showDash(live); return; }
+    DB.session.del();
+  }
+  goTo('register');
+})();
+</script>
+</body>
+</html>
